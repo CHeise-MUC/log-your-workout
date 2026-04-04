@@ -22,12 +22,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: "npm"
+          node-version: "24"
 
       # Step 3: Install all dependencies (reads package.json)
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       # Step 4: Build all apps (catches TypeScript errors)
       - name: Build
