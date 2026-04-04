@@ -23,10 +23,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24"
+          cache: "npm"
 
-      # Step 3: Install all dependencies (reads package.json)
+      # Step 3: Install all dependencies (reads package-lock.json exactly)
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # Step 4: Build all apps (catches TypeScript errors)
       - name: Build
