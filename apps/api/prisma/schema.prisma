@@ -1,0 +1,119 @@
+// ─────────────────────────────────────────────────────────
+// Prisma Schema – Log your Workout
+// ─────────────────────────────────────────────────────────
+// This file defines the database structure.
+// After changes, run: npx prisma migrate dev
+// ─────────────────────────────────────────────────────────
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─────────────────────────────────────────────────────────
+// USER
+// Managed by Supabase Auth – we mirror the user here
+// so we can link workouts, plans etc. to a real user record.
+// ─────────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  trainingPlans   TrainingPlan[]
+  workoutSessions WorkoutSession[]
+}
+
+// ─────────────────────────────────────────────────────────
+// EXERCISE
+// A global catalog of exercises (Bankdrücken, Kniebeugen…).
+// Independent of any user or plan.
+// ─────────────────────────────────────────────────────────
+model Exercise {
+  id          String  @id @default(cuid())
+  name        String
+  muscleGroup String  // "Brust", "Beine", "Rücken", "Schultern"…
+  description String?
+
+  planExercises PlanExercise[]
+  sets          Set[]
+}
+
+// ─────────────────────────────────────────────────────────
+// TRAINING PLAN
+// A named plan belonging to one user.
+// Contains a list of exercises in a defined order.
+// ─────────────────────────────────────────────────────────
+model TrainingPlan {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "Kraft Aufbau", "Push/Pull/Legs"
+  description String?
+  createdAt   DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  planExercises   PlanExercise[]
+  workoutSessions WorkoutSession[]
+}
+
+// ─────────────────────────────────────────────────────────
+// PLAN EXERCISE  (join table: TrainingPlan ↔ Exercise)
+// Resolves the many-to-many relationship.
+// Stores order and target values for each exercise in a plan.
+// ─────────────────────────────────────────────────────────
+model PlanExercise {
+  id         String @id @default(cuid())
+  order      Int    // position in the plan: 1, 2, 3…
+  targetSets Int?   // planned sets  (e.g. 4)
+  targetReps Int?   // planned reps  (e.g. 8)
+
+  planId String
+  plan   TrainingPlan @relation(fields: [planId], references: [id])
+
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+}
+
+// ─────────────────────────────────────────────────────────
+// WORKOUT SESSION
+// One concrete training session on a specific date.
+// Optionally linked to a training plan.
+// ─────────────────────────────────────────────────────────
+model WorkoutSession {
+  id    String   @id @default(cuid())
+  date  DateTime @default(now())
+  notes String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  planId String?
+  plan   TrainingPlan? @relation(fields: [planId], references: [id])
+
+  sets Set[]
+}
+
+// ─────────────────────────────────────────────────────────
+// SET
+// A single set within a workout session.
+// This is where the actual numbers are recorded.
+// ─────────────────────────────────────────────────────────
+model Set {
+  id       String  @id @default(cuid())
+  order    Int     // 1st set, 2nd set, 3rd set…
+  reps     Int     // actual reps performed
+  weightKg Float?  // actual weight in kg (optional for bodyweight exercises)
+  notes    String?
+
+  sessionId String
+  session   WorkoutSession @relation(fields: [sessionId], references: [id])
+
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+}
