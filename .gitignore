@@ -16,6 +16,9 @@ out/
 .env.test.local
 .env.production.local
 
+# But .env.example files ARE committed – they are safe templates
+!.env.example
+
 # Turbo
 .turbo/
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
   title: "Log your Workout",
@@ -13,7 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body>
+        {/* AuthProvider wraps the entire app so every page
+            can access the current user via useAuth() */}
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
