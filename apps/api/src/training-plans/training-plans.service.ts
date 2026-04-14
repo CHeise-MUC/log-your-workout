@@ -30,6 +30,56 @@ export class TrainingPlansService {
     });
   }
 
+  // Returns a single plan with all its exercises (including exercise details).
+  // Returns null if the plan doesn't exist or doesn't belong to this user.
+  async findOne(planId: string, userId: string) {
+    return this.prisma.trainingPlan.findFirst({
+      where: {
+        id: planId,
+        userId, // security: only the owner can see their plan details
+      },
+      include: {
+        planExercises: {
+          orderBy: { order: "asc" },
+          include: {
+            // Include the full exercise data so we get name + muscleGroup
+            exercise: true,
+          },
+        },
+      },
+    });
+  }
+
+  // Adds an exercise to a training plan.
+  // Also verifies that the plan belongs to the user before touching it.
+  async addExercise(
+    planId: string,
+    userId: string,
+    data: { exerciseId: string; targetSets?: number; targetReps?: number },
+  ) {
+    // Security check: make sure the plan belongs to this user
+    const plan = await this.prisma.trainingPlan.findFirst({
+      where: { id: planId, userId },
+    });
+    if (!plan) return null;
+
+    // Determine the next order number (place new exercise at the end)
+    const count = await this.prisma.planExercise.count({
+      where: { planId },
+    });
+
+    return this.prisma.planExercise.create({
+      data: {
+        planId,
+        exerciseId: data.exerciseId,
+        targetSets: data.targetSets,
+        targetReps: data.targetReps,
+        order: count + 1,
+      },
+      include: { exercise: true },
+    });
+  }
+
   // Creates a new training plan for the logged-in user.
   async create(
     userId: string,

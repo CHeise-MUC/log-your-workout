@@ -1,4 +1,7 @@
-import { Controller, Get, Post, Body, Request, UseGuards } from "@nestjs/common";
+import {
+  Controller, Get, Post, Body, Param,
+  Request, UseGuards, NotFoundException,
+} from "@nestjs/common";
 import { TrainingPlansService } from "./training-plans.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { Visibility } from "@prisma/client";
@@ -9,34 +12,48 @@ export class TrainingPlansController {
   constructor(private readonly trainingPlansService: TrainingPlansService) {}
 
   // GET /training-plans
-  // Returns only the plans of the logged-in user.
-  // req.user is set by the AuthGuard.
   @Get()
   findMine(@Request() req: any) {
     return this.trainingPlansService.findAllForUser(req.user.id);
   }
 
   // GET /training-plans/public
-  // Returns all public plans from all users – the discovery feed.
-  // Still requires login (no anonymous browsing).
   @Get("public")
   findPublic() {
     return this.trainingPlansService.findAllPublic();
   }
 
+  // GET /training-plans/:id
+  // Returns one plan with all its exercises.
+  // @Param("id") extracts the :id part from the URL.
+  // Returns 404 if the plan doesn't exist or belongs to someone else.
+  @Get(":id")
+  async findOne(@Param("id") id: string, @Request() req: any) {
+    const plan = await this.trainingPlansService.findOne(id, req.user.id);
+    if (!plan) throw new NotFoundException("Plan not found");
+    return plan;
+  }
+
   // POST /training-plans
-  // Creates a new plan for the logged-in user.
-  // Example body: { "name": "Push Day", "visibility": "PUBLIC" }
   @Post()
   create(
     @Request() req: any,
-    @Body()
-    body: {
-      name: string;
-      description?: string;
-      visibility: Visibility;
-    },
+    @Body() body: { name: string; description?: string; visibility: Visibility },
   ) {
     return this.trainingPlansService.create(req.user.id, body);
+  }
+
+  // POST /training-plans/:id/exercises
+  // Adds an exercise to a specific plan.
+  // Example body: { "exerciseId": "abc123", "targetSets": 4, "targetReps": 8 }
+  @Post(":id/exercises")
+  async addExercise(
+    @Param("id") id: string,
+    @Request() req: any,
+    @Body() body: { exerciseId: string; targetSets?: number; targetReps?: number },
+  ) {
+    const result = await this.trainingPlansService.addExercise(id, req.user.id, body);
+    if (!result) throw new NotFoundException("Plan not found");
+    return result;
   }
 }

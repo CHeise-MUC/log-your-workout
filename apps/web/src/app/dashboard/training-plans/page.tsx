@@ -224,6 +224,8 @@ function PlanList({
   plans: (TrainingPlan | PublicPlan)[];
   showOwner: boolean;
 }) {
+  const router = useRouter();
+
   if (plans.length === 0) {
     return <p style={styles.empty}>Keine Pläne vorhanden.</p>;
   }
@@ -231,7 +233,14 @@ function PlanList({
   return (
     <ul style={styles.list}>
       {plans.map((plan) => (
-        <li key={plan.id} style={styles.listItem}>
+        <li
+          key={plan.id}
+          style={styles.listItem}
+          // Only own plans are clickable – public plans from others are read-only
+          onClick={!showOwner ? () => router.push(`/dashboard/training-plans/${plan.id}`) : undefined}
+          role={!showOwner ? "button" : undefined}
+          title={!showOwner ? "Plan öffnen" : undefined}
+        >
           <div style={styles.planHeader}>
             <span style={styles.planName}>{plan.name}</span>
             <span
@@ -250,6 +259,9 @@ function PlanList({
             <p style={styles.planOwner}>
               von {(plan as PublicPlan).user.name ?? (plan as PublicPlan).user.email}
             </p>
+          )}
+          {!showOwner && (
+            <p style={styles.planHint}>Klicken zum Öffnen →</p>
           )}
         </li>
       ))}
@@ -326,5 +338,6 @@ const styles = {
   badgePrivate: { backgroundColor: "#e2e8f0", color: "#4a5568" },
   planDesc: { margin: "0.4rem 0 0", fontSize: "0.9rem", color: "#555" },
   planOwner: { margin: "0.3rem 0 0", fontSize: "0.8rem", color: "#888", fontStyle: "italic" as const },
+  planHint: { margin: "0.3rem 0 0", fontSize: "0.8rem", color: "#3182ce" },
   empty: { color: "#888", fontStyle: "italic" as const },
 } as const;
