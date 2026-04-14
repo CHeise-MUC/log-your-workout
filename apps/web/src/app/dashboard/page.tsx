@@ -65,6 +65,9 @@ export default function DashboardPage() {
         <button onClick={() => router.push("/dashboard/training-plans")} style={styles.navButton}>
           📋 Trainingspläne
         </button>
+        <button onClick={() => router.push("/dashboard/workout")} style={styles.navButton}>
+          🏋️ Training starten
+        </button>
 
         <hr style={styles.divider} />
 
