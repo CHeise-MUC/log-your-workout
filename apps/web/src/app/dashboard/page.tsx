@@ -57,6 +57,14 @@ export default function DashboardPage() {
 
         <hr style={styles.divider} />
 
+        {/* Navigation to features */}
+        <p style={styles.label}>Features</p>
+        <button onClick={() => router.push("/dashboard/exercises")} style={styles.navButton}>
+          💪 Übungen verwalten
+        </button>
+
+        <hr style={styles.divider} />
+
         <ApiStatus session={session} />
 
         <hr style={styles.divider} />
@@ -158,6 +166,19 @@ const styles = {
   apiStatus: {
     fontSize: "0.9rem",
     color: "#444",
+  },
+  navButton: {
+    padding: "0.6rem 1.2rem",
+    backgroundColor: "#3182ce",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "1rem",
+    marginBottom: "0.5rem",
+    display: "block",
+    width: "100%",
+    textAlign: "left" as const,
   },
   logoutButton: {
     padding: "0.6rem 1.2rem",
