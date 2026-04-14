@@ -50,11 +50,21 @@ model Exercise {
 // A named plan belonging to one user.
 // Contains a list of exercises in a defined order.
 // ─────────────────────────────────────────────────────────
+
+// Enum: only these two values are allowed for visibility.
+// PRIVATE = only the owner can see it
+// PUBLIC  = any logged-in user can find and view it
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
+
 model TrainingPlan {
-  id          String   @id @default(cuid())
-  name        String   // e.g. "Kraft Aufbau", "Push/Pull/Legs"
+  id          String     @id @default(cuid())
+  name        String     // e.g. "Kraft Aufbau", "Push/Pull/Legs"
   description String?
-  createdAt   DateTime @default(now())
+  visibility  Visibility @default(PRIVATE) // new: defaults to private
+  createdAt   DateTime   @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
