@@ -1,29 +1,61 @@
-# JIRA Story-Regeln – Log my Workout
+# JIRA-Regeln – Log my Workout
 
-Dieses Dokument definiert den Standard für das Erstellen von Stories im JIRA-Projekt **Log my Workout** (Projekt-Key: `SCRUM`).
-Alle Stories werden nach diesem Schema erstellt – von Claude oder manuell.
-
----
-
-## Story-Typ
-
-Neue Features und Funktionalitäten werden immer als **Story** angelegt.
-Technische Aufgaben ohne direkten Nutzernutzen → **Task**
-Fehler → **Bug**
+Dieses Dokument definiert den verbindlichen Standard für alle Issue-Typen im JIRA-Projekt **Log my Workout** (Projekt-Key: `SCRUM`).
+Gilt für Claude und manuelle Erstellung gleichermaßen.
 
 ---
 
-## Titel
+## Issue-Hierarchie
 
+```
+Epic
+└── Story / Task / Bug
+    └── Subtask (= Akzeptanzkriterium)
+```
+
+| Typ | Wann |
+|---|---|
+| **Epic** | Thematisches Cluster, das mehrere Stories/Tasks umfasst |
+| **Story** | Neues Feature oder Funktionalität mit direktem Nutzernutzen |
+| **Task** | Technische Aufgabe ohne direkten Nutzernutzen (Infrastruktur, Refactoring) |
+| **Bug** | Fehler in bestehender Funktionalität |
+| **Subtask** | Einzelnes Akzeptanzkriterium einer Story oder Task |
+
+---
+
+## Epics
+
+### Wann ein Epic anlegen?
+Ein Epic wird angelegt, wenn mehrere Stories oder Tasks thematisch zusammengehören und gemeinsam eine größere Produktdimension abbilden.
+
+### Benennung
+Format: `[Emoji] [Thema]`
+
+Beispiele aus diesem Projekt:
+- `🏋️ Workout & Training`
+- `🎓 Trainer & Kunden`
+- `📊 Analytics & Fortschritt`
+- `🏪 Community & Marketplace`
+- `⚙️ Infrastruktur & Skalierbarkeit`
+
+### Beschreibung
+Ein Epic braucht eine kurze Beschreibung (2–3 Sätze), die erklärt was dieses Thema umfasst und warum es wichtig ist.
+
+### Zuweisung
+Jede Story und jeder Task wird einem Epic zugewiesen (Feld `parent` in der JIRA API). Issues ohne Epic-Zuweisung sind die Ausnahme, nicht die Regel.
+
+---
+
+## Stories & Tasks
+
+### Titel
 - Kurz und konkret (max. 70 Zeichen)
 - Beschreibt das Feature, nicht die Implementierung
 - Kein Jargon
 
 **Beispiel:** `E-Mail-Benachrichtigung bei Trainer-Einladung versenden`
 
----
-
-## Beschreibungsstruktur
+### Beschreibungsstruktur
 
 Das JIRA-Projekt „Log my Workout" ist ein **Next-gen Projekt** – es gibt kein natives Acceptance-Criteria-Feld.
 Deshalb gilt folgende Aufteilung:
@@ -33,11 +65,7 @@ Deshalb gilt folgende Aufteilung:
 | User Story + Hintergrund + Technische Hinweise | **Description** der Story |
 | Akzeptanzkriterien | **Subtasks** der Story (je ein Subtask pro Kriterium) |
 
----
-
-### Description – Inhalt (Pflicht: 1 + 3; optional: 2 + 4)
-
-#### 1. User Story (Pflicht)
+#### 1. User Story (Pflicht bei Stories)
 ```
 Als [Rolle] möchte ich [Aktion] – damit [Nutzen].
 ```
@@ -55,7 +83,7 @@ Beschreibt den aktuellen Zustand (Was fehlt? Was ist das Problem?).
 
 ---
 
-### Akzeptanzkriterien – als Subtasks (Pflicht)
+## Akzeptanzkriterien – als Subtasks (Pflicht)
 
 Jedes Akzeptanzkriterium wird als eigener **Subtask** unter der Story angelegt.
 
@@ -76,7 +104,7 @@ Jedes Akzeptanzkriterium wird als eigener **Subtask** unter der Story angelegt.
 
 ## Labels
 
-Jede Story bekommt 1–3 Labels zur Kategorisierung:
+Jede Story und jeder Task bekommt 1–3 Labels zur Kategorisierung:
 
 | Bereich | Label |
 |---|---|
