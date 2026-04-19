@@ -44,7 +44,15 @@ export class AuthGuard implements CanActivate {
       },
     });
 
-    // Step 4: Attach the database user to the request.
+    // Step 4: Link any pending trainer invitations that were sent to this email.
+    // Runs on every request, but is idempotent: after the first link,
+    // no records with clientId = null for this email will remain.
+    await this.prisma.trainerClient.updateMany({
+      where: { inviteEmail: dbUser.email, clientId: null },
+      data: { clientId: dbUser.id },
+    });
+
+    // Step 5: Attach the database user to the request.
     // Controllers can now access request.user to know who is calling.
     request.user = dbUser;
 

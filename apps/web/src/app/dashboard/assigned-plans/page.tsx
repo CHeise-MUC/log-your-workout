@@ -29,13 +29,21 @@ type AssignedPlan = {
   };
 };
 
+type Invitation = {
+  id: string;
+  createdAt: string;
+  trainer: { id: string; name: string | null; email: string };
+};
+
 export default function AssignedPlansPage() {
   const { user, session, loading } = useAuth();
   const router = useRouter();
 
   const [assignments, setAssignments] = useState<AssignedPlan[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [fetching, setFetching] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push("/auth/login");
@@ -44,16 +52,43 @@ export default function AssignedPlansPage() {
   useEffect(() => {
     if (!session?.access_token) return;
 
-    fetch("http://localhost:3001/users/me/assigned-plans", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        setAssignments(data);
+    const headers = { Authorization: `Bearer ${session.access_token}` };
+
+    Promise.all([
+      fetch("http://localhost:3001/users/me/assigned-plans", { headers }).then((r) => r.json()),
+      fetch("http://localhost:3001/users/me/invitations", { headers }).then((r) => r.json()),
+    ])
+      .then(([plansData, invitationsData]) => {
+        setAssignments(plansData);
+        setInvitations(invitationsData);
         setFetching(false);
       })
       .catch(() => setFetching(false));
   }, [session]);
+
+  async function handleAccept(invitationId: string) {
+    if (!session?.access_token) return;
+    setAccepting(invitationId);
+
+    try {
+      const res = await fetch(
+        `http://localhost:3001/users/me/invitations/${invitationId}/accept`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        },
+      );
+      if (!res.ok) throw new Error("Fehler");
+
+      // Remove from pending list – the trainer's assigned plans will appear
+      // once they assign a plan to this now-active client.
+      setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+    } catch {
+      // Silent fail – invitation stays in the list
+    } finally {
+      setAccepting(null);
+    }
+  }
 
   if (loading || fetching) return <div style={s.page}><p>Lädt...</p></div>;
 
@@ -65,6 +100,34 @@ export default function AssignedPlansPage() {
           <h1 style={s.heading}>Vom Trainer zugewiesene Pläne</h1>
         </div>
 
+        {/* Pending invitations */}
+        {invitations.length > 0 && (
+          <div style={{ marginBottom: "1.5rem" }}>
+            <h2 style={s.sectionHeading}>Ausstehende Einladungen</h2>
+            {invitations.map((inv) => (
+              <div key={inv.id} style={s.inviteCard}>
+                <div>
+                  <div style={s.inviteName}>
+                    {inv.trainer.name ?? inv.trainer.email} möchte dein Trainer sein
+                  </div>
+                  <div style={s.inviteMeta}>
+                    Eingeladen am {new Date(inv.createdAt).toLocaleDateString("de-DE")}
+                  </div>
+                </div>
+                <button
+                  style={s.acceptButton}
+                  onClick={() => handleAccept(inv.id)}
+                  disabled={accepting === inv.id}
+                >
+                  {accepting === inv.id ? "..." : "Annehmen"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Assigned plans */}
+        <h2 style={s.sectionHeading}>Zugewiesene Pläne</h2>
         {assignments.length === 0 ? (
           <div style={s.card}>
             <p style={s.empty}>Dir wurden noch keine Pläne von einem Trainer zugewiesen.</p>
@@ -153,4 +216,9 @@ const s = {
   exerciseMeta: { color: "#888", fontSize: "0.8rem", marginTop: "0.1rem" },
   useButton: { width: "100%", padding: "0.7rem", backgroundColor: "#38a169", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.95rem" },
   empty: { color: "#888", fontStyle: "italic" as const },
+  sectionHeading: { fontSize: "1.1rem", fontWeight: "bold" as const, margin: "0 0 0.75rem" },
+  inviteCard: { backgroundColor: "white", padding: "1rem 1.25rem", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" },
+  inviteName: { fontWeight: "bold" as const, fontSize: "0.95rem" },
+  inviteMeta: { color: "#888", fontSize: "0.8rem", marginTop: "0.2rem" },
+  acceptButton: { padding: "0.5rem 1.1rem", backgroundColor: "#38a169", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.9rem", whiteSpace: "nowrap" as const },
 } as const;

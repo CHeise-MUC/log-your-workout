@@ -3,9 +3,11 @@ import {
   Get,
   Patch,
   Body,
+  Param,
   Request,
   UseGuards,
   BadRequestException,
+  NotFoundException,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { AuthGuard } from "../auth/auth.guard";
@@ -33,6 +35,23 @@ export class UsersController {
       throw new BadRequestException("Role must be USER or TRAINER");
     }
     return this.usersService.updateRole(req.user.id, body.role);
+  }
+
+  // GET /users/me/invitations
+  // Returns all pending trainer invitations for the logged-in user.
+  // An invitation stays PENDING until the user accepts it explicitly.
+  @Get("me/invitations")
+  getPendingInvitations(@Request() req: any) {
+    return this.usersService.getPendingInvitations(req.user.id);
+  }
+
+  // PATCH /users/me/invitations/:id/accept
+  // Accepts a specific pending invitation by setting its status to ACTIVE.
+  @Patch("me/invitations/:id/accept")
+  async acceptInvitation(@Request() req: any, @Param("id") id: string) {
+    const result = await this.usersService.acceptInvitation(req.user.id, id);
+    if (!result) throw new NotFoundException("Invitation not found");
+    return result;
   }
 
   // GET /users/me/assigned-plans

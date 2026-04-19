@@ -56,21 +56,23 @@ export class TrainerService {
     });
 
     if (clientUser) {
-      // Client exists → create an active connection immediately
+      // Client exists → create a PENDING connection.
+      // The client must explicitly accept in the app before becoming ACTIVE.
       return this.prisma.trainerClient.create({
         data: {
           trainerId,
           clientId: clientUser.id,
-          status: "ACTIVE",
+          inviteEmail: email,
+          status: "PENDING",
         },
         include: {
           client: { select: { id: true, name: true, email: true } },
         },
       });
     } else {
-      // Client does not exist yet → store a pending invitation
-      // When they register, the AuthGuard upsert will activate this
-      // (activation logic can be added later as the app grows)
+      // Client does not exist yet → store a pending invitation by email.
+      // When they register, auth.guard.ts links their userId to this record.
+      // They still need to accept explicitly before becoming ACTIVE.
       return this.prisma.trainerClient.create({
         data: {
           trainerId,

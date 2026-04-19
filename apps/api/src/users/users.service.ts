@@ -24,6 +24,35 @@ export class UsersService {
     });
   }
 
+  // Returns all pending trainer invitations for this user.
+  // A connection is PENDING until the client explicitly accepts it in the app.
+  async getPendingInvitations(userId: string) {
+    return this.prisma.trainerClient.findMany({
+      where: { clientId: userId, status: "PENDING" },
+      include: {
+        trainer: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  // Accepts a pending trainer invitation.
+  // Returns null if the invitation does not belong to this user or is not pending.
+  async acceptInvitation(userId: string, invitationId: string) {
+    const invitation = await this.prisma.trainerClient.findFirst({
+      where: { id: invitationId, clientId: userId, status: "PENDING" },
+    });
+    if (!invitation) return null;
+
+    return this.prisma.trainerClient.update({
+      where: { id: invitationId },
+      data: { status: "ACTIVE" },
+      include: {
+        trainer: { select: { id: true, name: true, email: true } },
+      },
+    });
+  }
+
   // Returns all training plans that have been assigned to this user by a trainer.
   // Each entry includes the plan details and who assigned it.
   async getAssignedPlans(userId: string) {
