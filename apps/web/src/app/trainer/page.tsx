@@ -114,8 +114,8 @@ export default function TrainerDashboardPage() {
           ? `${data.client?.name ?? data.client?.email} wurde als Kunde hinzugefügt.`
           : `Einladung an ${inviteEmail} wurde gespeichert.`,
       );
-    } catch (err: any) {
-      setInviteError(err.message);
+    } catch (err: unknown) {
+      setInviteError(err instanceof Error ? err.message : "Fehler");
     } finally {
       setInviting(false);
     }
@@ -142,15 +142,14 @@ export default function TrainerDashboardPage() {
       if (!res.ok) throw new Error(data.message ?? "Fehler");
 
       setAssignments((prev) => [data, ...prev]);
-    } catch (err: any) {
-      setAssignError(err.message);
+    } catch (err: unknown) {
+      setAssignError(err instanceof Error ? err.message : "Fehler");
     } finally {
       setAssigning(false);
     }
   }
 
   const activeClients = clients.filter((c) => c.status === "ACTIVE" && c.client);
-  const pendingClients = clients.filter((c) => c.status === "PENDING");
 
   if (loading || fetching) return <div style={s.page}><p>Lädt...</p></div>;
 
