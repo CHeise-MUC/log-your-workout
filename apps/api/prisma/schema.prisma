@@ -16,6 +16,35 @@ generator client {
 }
 
 // ─────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────
+
+// Role: determines what a user can do in the app.
+// USER    = regular client / athlete
+// TRAINER = fitness trainer or physiotherapist;
+//           can manage clients, assign plans, view client progress
+enum Role {
+  USER
+  TRAINER
+}
+
+// Visibility of a training plan.
+// PRIVATE = only the owner can see it
+// PUBLIC  = any logged-in user can find and view it
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
+
+// Status of a trainer–client connection.
+// PENDING = trainer has sent an invite, client not yet registered
+// ACTIVE  = connection is live; trainer can assign plans and view progress
+enum TrainerClientStatus {
+  PENDING
+  ACTIVE
+}
+
+// ─────────────────────────────────────────────────────────
 // USER
 // Managed by Supabase Auth – we mirror the user here
 // so we can link workouts, plans etc. to a real user record.
@@ -24,10 +53,69 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
+  role      Role     @default(USER) // new: USER by default; set to TRAINER to unlock trainer features
   createdAt DateTime @default(now())
 
   trainingPlans   TrainingPlan[]
   workoutSessions WorkoutSession[]
+
+  // Trainer side: clients this user manages
+  clientRelations TrainerClient[] @relation("TrainerRelation")
+
+  // Client side: trainers this user is connected to
+  trainerRelations TrainerClient[] @relation("ClientRelation")
+
+  // Plans assigned to this user by a trainer
+  assignedPlans PlanAssignment[] @relation("AssignedToClient")
+
+  // Plans this user (as trainer) has assigned to others
+  assignedByMe  PlanAssignment[] @relation("AssignedByTrainer")
+}
+
+// ─────────────────────────────────────────────────────────
+// TRAINER–CLIENT RELATIONSHIP
+// Links a trainer to one of their clients.
+// Created when a trainer invites a client by email.
+// Status moves from PENDING → ACTIVE when the client registers
+// (or immediately if the client already has an account).
+// ─────────────────────────────────────────────────────────
+model TrainerClient {
+  id          String            @id @default(cuid())
+  status      TrainerClientStatus @default(ACTIVE)
+  inviteEmail String?           // used when client has no account yet
+  createdAt   DateTime          @default(now())
+
+  trainerId String
+  trainer   User   @relation("TrainerRelation", fields: [trainerId], references: [id])
+
+  clientId  String?             // null while status = PENDING (client not registered yet)
+  client    User?  @relation("ClientRelation", fields: [clientId], references: [id])
+}
+
+// ─────────────────────────────────────────────────────────
+// PLAN ASSIGNMENT
+// Records that a trainer has assigned one of their plans
+// to a specific client. The plan itself is never modified –
+// the client gets a read-only view of the trainer's plan.
+// ─────────────────────────────────────────────────────────
+model PlanAssignment {
+  id         String   @id @default(cuid())
+  assignedAt DateTime @default(now())
+
+  // The plan being assigned (must belong to the trainer)
+  planId String
+  plan   TrainingPlan @relation(fields: [planId], references: [id])
+
+  // The trainer who made the assignment
+  trainerId String
+  trainer   User   @relation("AssignedByTrainer", fields: [trainerId], references: [id])
+
+  // The client receiving the plan
+  clientId String
+  client   User   @relation("AssignedToClient", fields: [clientId], references: [id])
+
+  // A trainer cannot assign the same plan to the same client twice
+  @@unique([planId, clientId])
 }
 
 // ─────────────────────────────────────────────────────────
@@ -50,20 +138,11 @@ model Exercise {
 // A named plan belonging to one user.
 // Contains a list of exercises in a defined order.
 // ─────────────────────────────────────────────────────────
-
-// Enum: only these two values are allowed for visibility.
-// PRIVATE = only the owner can see it
-// PUBLIC  = any logged-in user can find and view it
-enum Visibility {
-  PRIVATE
-  PUBLIC
-}
-
 model TrainingPlan {
   id          String     @id @default(cuid())
   name        String     // e.g. "Kraft Aufbau", "Push/Pull/Legs"
   description String?
-  visibility  Visibility @default(PRIVATE) // new: defaults to private
+  visibility  Visibility @default(PRIVATE)
   createdAt   DateTime   @default(now())
 
   userId String
@@ -71,6 +150,7 @@ model TrainingPlan {
 
   planExercises   PlanExercise[]
   workoutSessions WorkoutSession[]
+  assignments     PlanAssignment[]  // clients this plan has been assigned to
 }
 
 // ─────────────────────────────────────────────────────────
