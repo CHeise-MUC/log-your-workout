@@ -96,7 +96,7 @@ export default function AssignedPlansPage() {
     <div style={s.page}>
       <div style={s.inner}>
         <div style={s.header}>
-          <button onClick={() => router.push("/dashboard")} style={s.backLink}>← Dashboard</button>
+          <button onClick={() => router.back()} style={s.backLink}>← Zurück</button>
           <h1 style={s.heading}>Vom Trainer zugewiesene Pläne</h1>
         </div>
 

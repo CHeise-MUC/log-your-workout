@@ -12,6 +12,10 @@ export class TrainingPlansService {
     return this.prisma.trainingPlan.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
+      // Include the exercise count so the frontend can flag empty plans
+      include: {
+        _count: { select: { planExercises: true } },
+      },
     });
   }
 

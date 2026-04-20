@@ -51,8 +51,8 @@ export default function WorkoutHistoryPage() {
     <div style={styles.container}>
       <div style={styles.inner}>
         <div style={styles.header}>
-          <button onClick={() => router.push("/dashboard/workout")} style={styles.backLink}>
-            ← Training starten
+          <button onClick={() => router.back()} style={styles.backLink}>
+            ← Zurück
           </button>
           <h1 style={styles.heading}>Trainingshistorie</h1>
         </div>

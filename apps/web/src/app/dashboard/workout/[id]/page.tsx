@@ -140,8 +140,8 @@ export default function ActiveSessionPage() {
 
         {/* Header */}
         <div style={styles.header}>
-          <button onClick={() => router.push("/dashboard/workout")} style={styles.backLink}>
-            ← Training
+          <button onClick={() => router.back()} style={styles.backLink}>
+            ← Zurück
           </button>
           <h1 style={styles.heading}>
             {workout.plan ? workout.plan.name : "Freies Training"}

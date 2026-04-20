@@ -130,10 +130,10 @@ export default function TrainingPlanDetailPage() {
         {/* Header */}
         <div style={styles.header}>
           <button
-            onClick={() => router.push("/dashboard/training-plans")}
+            onClick={() => router.back()}
             style={styles.backLink}
           >
-            ← Trainingspläne
+            ← Zurück
           </button>
           <div style={styles.titleRow}>
             <h1 style={styles.heading}>{plan.name}</h1>

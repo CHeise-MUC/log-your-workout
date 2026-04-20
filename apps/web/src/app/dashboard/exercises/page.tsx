@@ -98,8 +98,8 @@ export default function ExercisesPage() {
 
         {/* Header */}
         <div style={styles.header}>
-          <button onClick={() => router.push("/dashboard")} style={styles.backLink}>
-            ← Dashboard
+          <button onClick={() => router.back()} style={styles.backLink}>
+            ← Zurück
           </button>
           <h1 style={styles.heading}>Übungen</h1>
         </div>

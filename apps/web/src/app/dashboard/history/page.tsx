@@ -418,7 +418,7 @@ const styles = {
     cursor: "pointer",
     fontSize: "0.9rem",
   },
-  sessionCardActive: { borderColor: "#3182ce", backgroundColor: "#ebf8ff" },
+  sessionCardActive: { border: "1px solid #3182ce", backgroundColor: "#ebf8ff" },
   sessionDate: { fontWeight: "bold" as const, color: "#2d3748" },
   sessionPlan: { color: "#718096", fontSize: "0.85rem" },
   sessionSets: { color: "#a0aec0", fontSize: "0.8rem", textAlign: "right" as const },

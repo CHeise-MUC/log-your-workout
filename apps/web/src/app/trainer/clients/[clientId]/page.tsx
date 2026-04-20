@@ -63,7 +63,7 @@ export default function ClientProgressPage() {
     <div style={s.page}>
       <div style={s.inner}>
         <div style={s.header}>
-          <button onClick={() => router.push("/trainer")} style={s.backLink}>← Trainer-Bereich</button>
+          <button onClick={() => router.back()} style={s.backLink}>← Zurück</button>
           <h1 style={s.heading}>Kunden-Fortschritt</h1>
           <p style={s.subtitle}>{sessions.length} Trainingseinheiten aufgezeichnet</p>
         </div>

@@ -159,7 +159,7 @@ export default function TrainerDashboardPage() {
 
         {/* Header */}
         <div style={s.header}>
-          <button onClick={() => router.push("/dashboard")} style={s.backLink}>← Dashboard</button>
+          <button onClick={() => router.back()} style={s.backLink}>← Zurück</button>
           <h1 style={s.heading}>Trainer-Bereich</h1>
           <p style={s.subtitle}>Verwalte deine Kunden und weise Trainingspläne zu.</p>
         </div>
