@@ -38,6 +38,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
-      # Step 5: Lint (checks code style and common mistakes)
+      # Step 5: Unit Tests (service-layer tests, no real DB)
+      - name: Test
+        run: npm run test --workspace=apps/api
+
+      # Step 6: Lint (checks code style and common mistakes)
       - name: Lint
         run: npm run lint

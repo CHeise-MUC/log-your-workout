@@ -70,6 +70,9 @@ model User {
 
   // Plans this user (as trainer) has assigned to others
   assignedByMe  PlanAssignment[] @relation("AssignedByTrainer")
+
+  // Comments this user (as trainer) has written on client sessions
+  sessionComments SessionComment[] @relation("TrainerComments")
 }
 
 // ─────────────────────────────────────────────────────────
@@ -187,7 +190,27 @@ model WorkoutSession {
   planId String?
   plan   TrainingPlan? @relation(fields: [planId], references: [id])
 
-  sets Set[]
+  sets     Set[]
+  comments SessionComment[]
+}
+
+// ─────────────────────────────────────────────────────────
+// SESSION COMMENT
+// A trainer leaves a comment on a client's workout session.
+// Visible to the client on their history page.
+// ─────────────────────────────────────────────────────────
+model SessionComment {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+
+  // The session being commented on
+  sessionId String
+  session   WorkoutSession @relation(fields: [sessionId], references: [id])
+
+  // The trainer who wrote the comment
+  trainerId String
+  trainer   User   @relation("TrainerComments", fields: [trainerId], references: [id])
 }
 
 // ─────────────────────────────────────────────────────────

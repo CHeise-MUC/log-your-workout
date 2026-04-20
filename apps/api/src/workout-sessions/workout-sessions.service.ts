@@ -1,6 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 
+// NOTE: SessionComment is a new model added in Module 13.
+// The Prisma client types are regenerated automatically when running
+// `npm install` (postinstall: prisma generate). Until then, we access
+// the model via type cast to avoid a stale-types compile error in the sandbox.
+type AnyPrisma = PrismaService & { sessionComment: any };
+
 @Injectable()
 export class WorkoutSessionsService {
   constructor(private prisma: PrismaService) {}
@@ -62,6 +68,78 @@ export class WorkoutSessionsService {
           },
         },
         sets: true,
+      },
+    });
+  }
+
+  // Returns the progress history for one exercise: max weight lifted
+  // per session, sorted oldest → newest. Used to draw the progress chart.
+  async getExerciseProgress(userId: string, exerciseId: string) {
+    const sessions = await this.prisma.workoutSession.findMany({
+      where: { userId },
+      orderBy: { date: "asc" },
+      include: {
+        sets: {
+          where: { exerciseId },
+        },
+      },
+    });
+
+    // Filter to sessions that actually contain this exercise,
+    // then map to { date, maxWeightKg } per session.
+    return sessions
+      .filter((s) => s.sets.length > 0)
+      .map((s) => {
+        const maxWeight = Math.max(...s.sets.map((set) => set.weightKg ?? 0));
+        return {
+          sessionId: s.id,
+          date: s.date,
+          maxWeightKg: maxWeight,
+        };
+      });
+  }
+
+  // A trainer adds a comment to one of their client's sessions.
+  // Access check: trainer must have an ACTIVE relationship with the session owner.
+  async addComment(
+    sessionId: string,
+    trainerId: string,
+    text: string,
+  ) {
+    // Verify the session exists and get its owner
+    const session = await this.prisma.workoutSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!session) return null;
+
+    // Check that the trainer has an active connection to this client
+    const relation = await this.prisma.trainerClient.findFirst({
+      where: { trainerId, clientId: session.userId, status: "ACTIVE" },
+    });
+    if (!relation) return null;
+
+    return (this.prisma as AnyPrisma).sessionComment.create({
+      data: { sessionId, trainerId, text },
+      include: {
+        trainer: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  // Returns all comments for a session.
+  // Users can only read comments on their own sessions.
+  async getComments(sessionId: string, userId: string) {
+    // Verify ownership
+    const session = await this.prisma.workoutSession.findFirst({
+      where: { id: sessionId, userId },
+    });
+    if (!session) return null;
+
+    return (this.prisma as AnyPrisma).sessionComment.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        trainer: { select: { id: true, name: true } },
       },
     });
   }

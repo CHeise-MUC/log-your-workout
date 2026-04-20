@@ -94,6 +94,9 @@ export default function DashboardPage() {
         <button onClick={() => router.push("/dashboard/training-plans")} style={styles.navButton}>
           📋 Trainingspläne
         </button>
+        <button onClick={() => router.push("/dashboard/history")} style={styles.navButton}>
+          📈 Trainingshistorie
+        </button>
 
         {/* User features – visible to regular users and trainers in user view */}
         {!isTrainerView && (
