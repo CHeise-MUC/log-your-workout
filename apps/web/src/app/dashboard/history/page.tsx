@@ -191,7 +191,7 @@ export default function HistoryPage() {
                 <div style={styles.chartWrapper}>
                   {chartData.length === 0 ? (
                     <p style={styles.empty}>
-                      Noch keine Daten für „{selectedExercise.name}".
+                      Noch keine Daten für &bdquo;{selectedExercise.name}&ldquo;.
                     </p>
                   ) : (
                     <>
