@@ -22,10 +22,20 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<DbProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   // Trainers can switch between their trainer view and the user view locally.
+  // Persisted in sessionStorage so navigating away and back keeps the selection.
   // This does NOT change the role in the database – the account stays TRAINER.
-  const [viewAsUser, setViewAsUser] = useState(false);
+  const [viewAsUser, setViewAsUser] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("dashboardViewAsUser") === "true";
+  });
+
+  // Keep sessionStorage in sync whenever the toggle changes
+  useEffect(() => {
+    sessionStorage.setItem("dashboardViewAsUser", String(viewAsUser));
+  }, [viewAsUser]);
 
   // Route protection
   useEffect(() => {
@@ -41,10 +51,14 @@ export default function DashboardPage() {
     })
       .then((r) => r.json())
       .then(setProfile)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setProfileLoading(false));
   }, [session]);
 
-  if (loading) return <div style={styles.container}><p>Loading...</p></div>;
+  // Show a single loading screen until both auth AND profile are ready.
+  // This prevents the brief flash where a TRAINER account appears as USER
+  // before the profile fetch completes.
+  if (loading || profileLoading) return <div style={styles.container}><p>Loading...</p></div>;
   if (!user) return null;
 
   const displayName = user.user_metadata?.name ?? user.email ?? "Unknown User";
