@@ -1,192 +1,207 @@
 "use client";
 
-// This is a protected page. Only logged-in users can see it.
-// If someone visits /dashboard without being logged in,
-// they get redirected to /auth/login automatically.
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Zap, TrendingUp, CalendarDays, Dumbbell } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/lib/supabase";
-import type { Session } from "@supabase/supabase-js";
 
-type DbProfile = {
+type WorkoutSession = {
   id: string;
-  email: string;
-  name: string | null;
-  role: "USER" | "TRAINER";
+  date: string;
+  plan: { name: string } | null;
+  sets: Array<{ exercise: { name: string }; reps: number; weightKg: number | null }>;
 };
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Guten Morgen";
+  if (h < 18) return "Guten Tag";
+  return "Guten Abend";
+}
+
 export default function DashboardPage() {
-  const { user, session, loading } = useAuth();
+  const { user, session } = useAuth();
   const router = useRouter();
 
-  const [profile, setProfile] = useState<DbProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
 
-  // Trainers can switch between their trainer view and the user view locally.
-  // Persisted in sessionStorage so navigating away and back keeps the selection.
-  // This does NOT change the role in the database – the account stays TRAINER.
-  const [viewAsUser, setViewAsUser] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem("dashboardViewAsUser") === "true";
-  });
-
-  // Keep sessionStorage in sync whenever the toggle changes
-  useEffect(() => {
-    sessionStorage.setItem("dashboardViewAsUser", String(viewAsUser));
-  }, [viewAsUser]);
-
-  // Route protection
-  useEffect(() => {
-    if (!loading && !user) router.push("/auth/login");
-  }, [loading, user, router]);
-
-  // Load the user's database profile (includes role)
   useEffect(() => {
     if (!session?.access_token) return;
-
-    fetch("http://localhost:3001/users/me", {
+    fetch("http://localhost:3001/workout-sessions", {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
-      .then(setProfile)
+      .then((data: WorkoutSession[]) => setSessions(data))
       .catch(() => {})
-      .finally(() => setProfileLoading(false));
+      .finally(() => setLoadingSessions(false));
   }, [session]);
 
-  // Show a single loading screen until both auth AND profile are ready.
-  // This prevents the brief flash where a TRAINER account appears as USER
-  // before the profile fetch completes.
-  if (loading || profileLoading) return <div style={styles.container}><p>Loading...</p></div>;
-  if (!user) return null;
+  const displayName =
+    user?.user_metadata?.name ??
+    user?.email?.replace(/@.*/, "") ??
+    "Unknown User";
 
-  const displayName = user.user_metadata?.name ?? user.email ?? "Unknown User";
-  const isTrainerAccount = profile?.role === "TRAINER";
+  const lastSession = sessions[sessions.length - 1] ?? null;
+  const totalSets = sessions.reduce((sum, s) => sum + s.sets.length, 0);
 
-  // Effective view mode: trainer accounts can switch to user view locally
-  const isTrainerView = isTrainerAccount && !viewAsUser;
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/auth/login");
-  }
+  // Unique exercises ever logged
+  const uniqueExercises = new Set(
+    sessions.flatMap((s) => s.sets.map((set) => set.exercise.name))
+  ).size;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.heading}>Dashboard</h1>
-        <p style={styles.welcome}>
-          Willkommen zurück, <strong>{displayName}</strong>!
-        </p>
-        <p style={styles.email}>Eingeloggt als: {user.email}</p>
+    <div className="max-w-3xl">
 
-        {/* Role badge + view toggle (only visible for trainer accounts) */}
-        {profile && (
-          <div style={styles.roleRow}>
-            <span style={isTrainerView ? styles.badgeTrainer : styles.badgeUser}>
-              {isTrainerView ? "🎓 Trainer-Ansicht" : "👤 Nutzer-Ansicht"}
-            </span>
-            {isTrainerAccount && (
-              <button
-                onClick={() => setViewAsUser((v) => !v)}
-                style={styles.roleToggle}
-              >
-                {isTrainerView ? "Zur Nutzer-Ansicht" : "Zur Trainer-Ansicht"}
-              </button>
-            )}
+      {/* Begrüßung */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-1"
+          style={{ color: "var(--color-text-primary)" }}>
+          {getGreeting()}, {displayName} 👋
+        </h1>
+        <p className="text-base" style={{ color: "var(--color-text-secondary)" }}>
+          Hier ist dein Trainingsüberblick.
+        </p>
+      </div>
+
+      {/* Statistik-Kacheln */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <StatCard
+          icon={CalendarDays}
+          label="Trainingseinheiten"
+          value={loadingSessions ? "–" : String(sessions.length)}
+        />
+        <StatCard
+          icon={Dumbbell}
+          label="Verschiedene Übungen"
+          value={loadingSessions ? "–" : String(uniqueExercises)}
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Sets insgesamt"
+          value={loadingSessions ? "–" : String(totalSets)}
+        />
+      </div>
+
+      {/* Letzte Session */}
+      <div className="mb-8">
+        <h2 className="text-sm font-semibold uppercase tracking-widest mb-3"
+          style={{ color: "var(--color-text-muted)" }}>
+          Letzte Session
+        </h2>
+
+        {loadingSessions ? (
+          <div className="rounded-xl p-5" style={{
+            backgroundColor: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+          }}>
+            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>Laden...</p>
+          </div>
+        ) : lastSession ? (
+          <div
+            className="rounded-xl p-5 cursor-pointer"
+            style={{
+              backgroundColor: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              boxShadow: "var(--shadow-card)",
+              transition: "box-shadow 0.15s ease",
+            }}
+            onClick={() => router.push("/dashboard/history")}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "var(--shadow-lg)")}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "var(--shadow-card)")}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                {lastSession.plan?.name ?? "Ohne Plan"}
+              </p>
+              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                {new Date(lastSession.date).toLocaleDateString("de-DE", {
+                  weekday: "long",
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                {lastSession.sets.length} {lastSession.sets.length === 1 ? "Set" : "Sets"}
+              </p>
+              <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                {new Set(lastSession.sets.map((s) => s.exercise.name)).size} Übungen
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl p-6 text-center" style={{
+            backgroundColor: "var(--color-surface)",
+            border: "1px dashed var(--color-border)",
+          }}>
+            <p className="text-sm mb-1" style={{ color: "var(--color-text-secondary)" }}>
+              Noch kein Training aufgezeichnet.
+            </p>
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              Starte deine erste Session und sie erscheint hier.
+            </p>
           </div>
         )}
-
-        <hr style={styles.divider} />
-
-        {/* Navigation – buttons shown depend on the effective view mode */}
-        <p style={styles.label}>Features</p>
-        <button onClick={() => router.push("/dashboard/exercises")} style={styles.navButton}>
-          💪 Übungen verwalten
-        </button>
-        <button onClick={() => router.push("/dashboard/training-plans")} style={styles.navButton}>
-          📋 Trainingspläne
-        </button>
-
-        {/* User features – visible to regular users and trainers in user view */}
-        {!isTrainerView && (
-          <>
-            <button onClick={() => router.push("/dashboard/history")} style={styles.navButton}>
-              📈 Trainingshistorie
-            </button>
-            <button onClick={() => router.push("/dashboard/workout")} style={styles.navButton}>
-              🏋️ Training starten
-            </button>
-            <button onClick={() => router.push("/dashboard/assigned-plans")} style={styles.navButton}>
-              📨 Vom Trainer zugewiesene Pläne
-            </button>
-          </>
-        )}
-
-        {/* Trainer features – only visible in trainer view */}
-        {isTrainerView && (
-          <button onClick={() => router.push("/trainer")} style={styles.trainerButton}>
-            🎓 Kunden & Pläne verwalten
-          </button>
-        )}
-
-        <hr style={styles.divider} />
-
-        <ApiStatus session={session} />
-
-        <hr style={styles.divider} />
-
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
       </div>
+
+      {/* Quick Action */}
+      <button
+        onClick={() => router.push("/dashboard/workout")}
+        className="flex items-center gap-3 px-6 py-3.5 rounded-xl text-sm font-semibold cursor-pointer"
+        style={{
+          backgroundColor: "var(--color-accent)",
+          color: "#ffffff",
+          border: "none",
+          boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
+          transition: "opacity 0.15s ease, box-shadow 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = "0.92";
+          e.currentTarget.style.boxShadow = "0 6px 18px rgba(79, 70, 229, 0.4)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = "1";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(79, 70, 229, 0.3)";
+        }}
+      >
+        <Zap size={18} />
+        Training starten
+      </button>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-// ApiStatus: verifies backend connectivity
-// ─────────────────────────────────────────────
-function ApiStatus({ session }: { session: Session | null }) {
-  const [status, setStatus] = useState<string>("Connecting...");
+// ─── StatCard ────────────────────────────────────────────────────
+import type { LucideIcon } from "lucide-react";
 
-  useEffect(() => {
-    if (!session?.access_token) return;
-
-    fetch("http://localhost:3001/profile", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => setStatus(`✅ Backend antwortet: ${JSON.stringify(data)}`))
-      .catch((err) => setStatus(`⚠️ Backend nicht erreichbar (${err.message}) – läuft die API?`));
-  }, [session]);
-
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
   return (
-    <div>
-      <p style={styles.label}>Backend-Verbindung:</p>
-      <p style={styles.apiStatus}>{status}</p>
+    <div
+      className="rounded-xl p-5"
+      style={{
+        backgroundColor: "var(--color-surface)",
+        border: "1px solid var(--color-border)",
+        boxShadow: "var(--shadow-card)",
+      }}
+    >
+      <Icon size={18} style={{ color: "var(--color-accent)", marginBottom: "0.75rem" }} />
+      <p className="text-2xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
+        {value}
+      </p>
+      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+        {label}
+      </p>
     </div>
   );
 }
-
-const styles = {
-  container: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#f5f5f5", fontFamily: "sans-serif" },
-  card: { backgroundColor: "white", padding: "2rem", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", width: "100%", maxWidth: "480px" },
-  heading: { margin: "0 0 0.5rem", fontSize: "1.5rem" },
-  welcome: { fontSize: "1.1rem", margin: "0.5rem 0" },
-  email: { color: "#666", fontSize: "0.9rem", margin: "0.25rem 0 0.75rem" },
-  roleRow: { display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" },
-  roleToggle: { fontSize: "0.8rem", padding: "0.2rem 0.6rem", backgroundColor: "transparent", border: "1px solid #cbd5e0", borderRadius: "4px", cursor: "pointer", color: "#555" },
-  badgeUser: { backgroundColor: "#e2e8f0", color: "#4a5568", padding: "0.2rem 0.6rem", borderRadius: "999px", fontSize: "0.8rem", fontWeight: "bold" as const },
-  badgeTrainer: { backgroundColor: "#fefcbf", color: "#744210", padding: "0.2rem 0.6rem", borderRadius: "999px", fontSize: "0.8rem", fontWeight: "bold" as const },
-  divider: { margin: "1.5rem 0", border: "none", borderTop: "1px solid #eee" },
-  label: { fontWeight: "bold" as const, marginBottom: "0.5rem", display: "block" },
-  apiStatus: { fontSize: "0.9rem", color: "#444" },
-  navButton: { padding: "0.6rem 1.2rem", backgroundColor: "#3182ce", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "1rem", marginBottom: "0.5rem", display: "block", width: "100%", textAlign: "left" as const },
-  trainerButton: { padding: "0.6rem 1.2rem", backgroundColor: "#d69e2e", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "1rem", marginBottom: "0.5rem", display: "block", width: "100%", textAlign: "left" as const },
-  logoutButton: { padding: "0.6rem 1.2rem", backgroundColor: "#e53e3e", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "1rem" },
-} as const;

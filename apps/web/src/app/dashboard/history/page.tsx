@@ -92,12 +92,14 @@ export default function HistoryPage() {
       .then((data: Session[]) => {
         setSessions(data);
 
-        // Derive unique exercises from all sets across all sessions
+        // Derive unique exercises from all sets across all sessions.
+        // Fallback auf name als Key, falls exercise.id undefined ist.
         const seen = new Map<string, string>();
         data.forEach((s) =>
           s.sets.forEach((set) => {
-            if (!seen.has(set.exercise.id)) {
-              seen.set(set.exercise.id, set.exercise.name);
+            const key = set.exercise.id ?? set.exercise.name;
+            if (!seen.has(key)) {
+              seen.set(key, set.exercise.name);
             }
           })
         );
@@ -144,12 +146,12 @@ export default function HistoryPage() {
   }, [selectedSession, session]);
 
   if (loading || loadingData) {
-    return <div style={styles.container}><p>Lade...</p></div>;
+    return <div><p>Lade...</p></div>;
   }
   if (!user) return null;
 
   return (
-    <div style={styles.container}>
+    <div>
       <div style={styles.card}>
 
         {/* Header */}
@@ -340,19 +342,13 @@ export default function HistoryPage() {
 // ─── Styles ───────────────────────────────────────────────────
 
 const styles = {
-  container: {
-    minHeight: "100vh",
-    backgroundColor: "#f5f5f5",
-    fontFamily: "sans-serif",
-    padding: "2rem 1rem",
-  },
   card: {
-    backgroundColor: "white",
+    backgroundColor: "var(--color-surface)",
     padding: "2rem",
-    borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+    borderRadius: "12px",
+    boxShadow: "var(--shadow-card)",
+    border: "1px solid var(--color-border)",
     maxWidth: "640px",
-    margin: "0 auto",
   },
   headerRow: {
     display: "flex",
@@ -363,12 +359,12 @@ const styles = {
   heading: { margin: 0, fontSize: "1.5rem" },
   backButton: {
     background: "none",
-    border: "1px solid #cbd5e0",
-    borderRadius: "4px",
+    border: "1px solid var(--color-border)",
+    borderRadius: "var(--radius-sm)",
     padding: "0.3rem 0.8rem",
     cursor: "pointer",
-    fontSize: "0.9rem",
-    color: "#555",
+    fontSize: "0.85rem",
+    color: "var(--color-text-secondary)",
   },
   section: { marginBottom: "1rem" },
   subheading: { fontSize: "1.1rem", margin: "0 0 0.75rem", color: "#2d3748" },

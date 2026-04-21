@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Users, ClipboardList, UserPlus, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 type Client = {
@@ -21,14 +21,7 @@ type Assignment = {
 
 type Plan = { id: string; name: string };
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Guten Morgen";
-  if (h < 18) return "Guten Tag";
-  return "Guten Abend";
-}
-
-export default function TrainerDashboardPage() {
+export default function TrainerClientsPage() {
   const { user, session, loading } = useAuth();
   const router = useRouter();
 
@@ -135,40 +128,24 @@ export default function TrainerDashboardPage() {
   }
 
   const activeClients = clients.filter((c) => c.status === "ACTIVE" && c.client);
-  const pendingClients = clients.filter((c) => c.status === "PENDING");
-  const displayName =
-    user?.user_metadata?.name ?? user?.email?.replace(/@.*/, "") ?? "Trainer";
 
   if (loading || fetching) {
-    return (
-      <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-        Laden...
-      </p>
-    );
+    return <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>Laden...</p>;
   }
 
   return (
     <div className="max-w-3xl">
 
-      {/* Begrüßung */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-1"
-          style={{ color: "var(--color-text-primary)" }}>
-          {getGreeting()}, {displayName} 👋
+        <h1 className="text-3xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
+          Kunden & Pläne
         </h1>
         <p className="text-base" style={{ color: "var(--color-text-secondary)" }}>
-          Dein Trainer-Überblick.
+          Verwalte deine Kunden und weise Trainingspläne zu.
         </p>
       </div>
 
-      {/* Statistik-Kacheln */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <StatCard icon={Users} label="Aktive Kunden" value={String(activeClients.length)} />
-        <StatCard icon={UserPlus} label="Ausstehende Einladungen" value={String(pendingClients.length)} />
-        <StatCard icon={ClipboardList} label="Zuweisungen gesamt" value={String(assignments.length)} />
-      </div>
-
-      {/* Kunden-Übersicht */}
+      {/* Kunden-Liste */}
       <Section title="Meine Kunden">
         {clients.length === 0 ? (
           <EmptyState text="Noch keine Kunden hinzugefügt." />
@@ -251,14 +228,10 @@ export default function TrainerDashboardPage() {
           </button>
         </form>
         {inviteSuccess && (
-          <p className="text-sm mt-2" style={{ color: "var(--color-success-text)" }}>
-            {inviteSuccess}
-          </p>
+          <p className="text-sm mt-2" style={{ color: "var(--color-success-text)" }}>{inviteSuccess}</p>
         )}
         {inviteError && (
-          <p className="text-sm mt-2" style={{ color: "var(--color-danger-text)" }}>
-            {inviteError}
-          </p>
+          <p className="text-sm mt-2" style={{ color: "var(--color-danger-text)" }}>{inviteError}</p>
         )}
       </Section>
 
@@ -315,12 +288,9 @@ export default function TrainerDashboardPage() {
               </button>
             </form>
             {assignError && (
-              <p className="text-sm mt-2" style={{ color: "var(--color-danger-text)" }}>
-                {assignError}
-              </p>
+              <p className="text-sm mt-2" style={{ color: "var(--color-danger-text)" }}>{assignError}</p>
             )}
 
-            {/* Bisherige Zuweisungen */}
             {assignments.length > 0 && (
               <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--color-border)" }}>
                 <p className="text-xs font-semibold uppercase tracking-widest mb-3"
@@ -350,28 +320,6 @@ export default function TrainerDashboardPage() {
           </>
         )}
       </Section>
-
-    </div>
-  );
-}
-
-// ─── Hilfskomponenten ─────────────────────────────────────────────
-
-import type { LucideIcon } from "lucide-react";
-
-function StatCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return (
-    <div className="rounded-xl p-5"
-      style={{
-        backgroundColor: "var(--color-surface)",
-        border: "1px solid var(--color-border)",
-        boxShadow: "var(--shadow-card)",
-      }}>
-      <Icon size={18} style={{ color: "var(--color-accent)", marginBottom: "0.75rem" }} />
-      <p className="text-2xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
-        {value}
-      </p>
-      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>{label}</p>
     </div>
   );
 }
