@@ -1,54 +1,21 @@
 "use client";
 
-// ─────────────────────────────────────────────────────────────
-// Module 13 – Trainingshistorie & Fortschritt
-//
-// What this page does:
-//  1. Loads all sessions for the logged-in user
-//  2. Extracts the list of exercises the user has ever logged
-//  3. When the user picks an exercise, fetches the progress data
-//     (max weight per session) and draws a Recharts line chart
-//  4. For each session the user selects, shows any trainer comments
-// ─────────────────────────────────────────────────────────────
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 
-// ─── Types ────────────────────────────────────────────────────
-
-type ExerciseSummary = {
-  id: string;
-  name: string;
-};
-
-type ProgressPoint = {
-  sessionId: string;
-  date: string; // ISO string
-  maxWeightKg: number;
-};
-
-type ChartPoint = {
-  label: string; // formatted date for X axis
-  maxWeightKg: number;
-};
-
+type ExerciseSummary = { id: string; name: string };
+type ProgressPoint = { sessionId: string; date: string; maxWeightKg: number };
+type ChartPoint = { label: string; maxWeightKg: number };
 type TrainerComment = {
   id: string;
   text: string;
   createdAt: string;
   trainer: { id: string; name: string | null };
 };
-
 type Session = {
   id: string;
   date: string;
@@ -60,8 +27,6 @@ type Session = {
     order: number;
   }>;
 };
-
-// ─── Main Page ────────────────────────────────────────────────
 
 export default function HistoryPage() {
   const { user, session, loading } = useAuth();
@@ -75,32 +40,24 @@ export default function HistoryPage() {
   const [comments, setComments] = useState<TrainerComment[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  // Route protection
   useEffect(() => {
     if (!loading && !user) router.push("/auth/login");
   }, [loading, user, router]);
 
-  // Load all sessions
   useEffect(() => {
     if (!session?.access_token) return;
     setLoadingData(true);
-
     fetch("http://localhost:3001/workout-sessions", {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
       .then((data: Session[]) => {
         setSessions(data);
-
-        // Derive unique exercises from all sets across all sessions.
-        // Fallback auf name als Key, falls exercise.id undefined ist.
         const seen = new Map<string, string>();
         data.forEach((s) =>
           s.sets.forEach((set) => {
             const key = set.exercise.id ?? set.exercise.name;
-            if (!seen.has(key)) {
-              seen.set(key, set.exercise.name);
-            }
+            if (!seen.has(key)) seen.set(key, set.exercise.name);
           })
         );
         setExercises([...seen.entries()].map(([id, name]) => ({ id, name })));
@@ -109,22 +66,16 @@ export default function HistoryPage() {
       .finally(() => setLoadingData(false));
   }, [session]);
 
-  // Load progress when exercise is selected
   useEffect(() => {
     if (!selectedExercise || !session?.access_token) return;
-
-    fetch(
-      `http://localhost:3001/workout-sessions/progress/${selectedExercise.id}`,
-      { headers: { Authorization: `Bearer ${session.access_token}` } }
-    )
+    fetch(`http://localhost:3001/workout-sessions/progress/${selectedExercise.id}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((r) => r.json())
       .then((points: ProgressPoint[]) => {
         setChartData(
           points.map((p) => ({
-            label: new Date(p.date).toLocaleDateString("de-DE", {
-              day: "2-digit",
-              month: "2-digit",
-            }),
+            label: new Date(p.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }),
             maxWeightKg: p.maxWeightKg,
           }))
         );
@@ -132,318 +83,254 @@ export default function HistoryPage() {
       .catch(() => {});
   }, [selectedExercise, session]);
 
-  // Load trainer comments when session is selected
   useEffect(() => {
     if (!selectedSession || !session?.access_token) return;
-
-    fetch(
-      `http://localhost:3001/workout-sessions/${selectedSession.id}/comments`,
-      { headers: { Authorization: `Bearer ${session.access_token}` } }
-    )
+    fetch(`http://localhost:3001/workout-sessions/${selectedSession.id}/comments`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((r) => r.json())
       .then(setComments)
       .catch(() => setComments([]));
   }, [selectedSession, session]);
 
   if (loading || loadingData) {
-    return <div><p>Lade...</p></div>;
+    return <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>Laden...</p>;
   }
   if (!user) return null;
 
   return (
-    <div>
-      <div style={styles.card}>
+    <div className="max-w-3xl">
 
-        {/* Header */}
-        <div style={styles.headerRow}>
-          <h1 style={styles.heading}>📈 Trainingshistorie</h1>
-          <button onClick={() => router.back()} style={styles.backButton}>
-            ← Zurück
-          </button>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
+          Trainingshistorie
+        </h1>
+        <p className="text-base" style={{ color: "var(--color-text-secondary)" }}>
+          Dein Fortschritt auf einen Blick.
+        </p>
+      </div>
 
-        {sessions.length === 0 ? (
-          <p style={styles.empty}>Du hast noch kein Training aufgezeichnet.</p>
-        ) : (
-          <>
-            {/* ── Exercise progress chart ── */}
-            <section style={styles.section}>
-              <h2 style={styles.subheading}>Fortschritt pro Übung</h2>
+      {sessions.length === 0 ? (
+        <Section title="Sessions">
+          <EmptyState text="Du hast noch kein Training aufgezeichnet." />
+        </Section>
+      ) : (
+        <>
+          {/* Fortschritt pro Übung */}
+          <Section title="Fortschritt pro Übung">
+            <div className="flex flex-wrap gap-2 mb-4">
+              {exercises.map((ex) => (
+                <button
+                  key={ex.id}
+                  onClick={() => { setSelectedExercise(ex); setSelectedSession(null); }}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer"
+                  style={{
+                    backgroundColor: selectedExercise?.id === ex.id ? "var(--color-accent)" : "var(--color-bg)",
+                    color: selectedExercise?.id === ex.id ? "#ffffff" : "var(--color-text-secondary)",
+                    border: selectedExercise?.id === ex.id
+                      ? "1px solid var(--color-accent)"
+                      : "1px solid var(--color-border)",
+                  }}
+                >
+                  {ex.name}
+                </button>
+              ))}
+            </div>
 
-              <div style={styles.exerciseGrid}>
-                {exercises.map((ex) => (
-                  <button
-                    key={ex.id}
-                    onClick={() => {
-                      setSelectedExercise(ex);
-                      setSelectedSession(null);
-                    }}
-                    style={
-                      selectedExercise?.id === ex.id
-                        ? { ...styles.exerciseChip, ...styles.exerciseChipActive }
-                        : styles.exerciseChip
-                    }
-                  >
-                    {ex.name}
-                  </button>
-                ))}
-              </div>
-
-              {selectedExercise && (
-                <div style={styles.chartWrapper}>
-                  {chartData.length === 0 ? (
-                    <p style={styles.empty}>
-                      Noch keine Daten für &bdquo;{selectedExercise.name}&ldquo;.
+            {selectedExercise && (
+              <div
+                className="rounded-xl p-4"
+                style={{
+                  backgroundColor: "var(--color-bg)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                {chartData.length === 0 ? (
+                  <EmptyState text={`Noch keine Daten für „${selectedExercise.name}".`} />
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold mb-3" style={{ color: "var(--color-text-secondary)" }}>
+                      Max. Gewicht – {selectedExercise.name}
                     </p>
-                  ) : (
-                    <>
-                      <p style={styles.chartTitle}>
-                        Max. Gewicht – {selectedExercise.name}
-                      </p>
-                      <ResponsiveContainer width="100%" height={220}>
-                        <LineChart
-                          data={chartData}
-                          margin={{ top: 8, right: 16, left: 0, bottom: 4 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 11, fill: "#718096" }}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            unit=" kg"
-                            tick={{ fontSize: 11, fill: "#718096" }}
-                            tickLine={false}
-                            axisLine={false}
-                            width={56}
-                          />
-                          <Tooltip
-                            formatter={(value) => [`${value} kg`, "Max. Gewicht"]}
-                            contentStyle={{
-                              borderRadius: "6px",
-                              border: "1px solid #e2e8f0",
-                              fontSize: "0.85rem",
-                            }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="maxWeightKg"
-                            stroke="#3182ce"
-                            strokeWidth={2.5}
-                            dot={{ r: 5, fill: "#3182ce", stroke: "white", strokeWidth: 2 }}
-                            activeDot={{ r: 7 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </>
-                  )}
-                </div>
-              )}
-            </section>
-
-            <hr style={styles.divider} />
-
-            {/* ── Session list ── */}
-            <section style={styles.section}>
-              <h2 style={styles.subheading}>Alle Sessions</h2>
-              <div style={styles.sessionList}>
-                {sessions.map((s) => (
-                  <div
-                    key={s.id}
-                    style={
-                      selectedSession?.id === s.id
-                        ? { ...styles.sessionCard, ...styles.sessionCardActive }
-                        : styles.sessionCard
-                    }
-                    onClick={() => setSelectedSession(s)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && setSelectedSession(s)}
-                  >
-                    <span style={styles.sessionDate}>
-                      {new Date(s.date).toLocaleDateString("de-DE", {
-                        weekday: "short",
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
-                    </span>
-                    <span style={styles.sessionPlan}>
-                      {s.plan?.name ?? "Ohne Plan"}
-                    </span>
-                    <span style={styles.sessionSets}>
-                      {s.sets.length} Set{s.sets.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                ))}
+                    <ResponsiveContainer width="100%" height={220}>
+                      <LineChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          unit=" kg"
+                          tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
+                          tickLine={false}
+                          axisLine={false}
+                          width={56}
+                        />
+                        <Tooltip
+                          formatter={(value) => [`${value} kg`, "Max. Gewicht"]}
+                          contentStyle={{
+                            borderRadius: "10px",
+                            border: "1px solid var(--color-border)",
+                            fontSize: "0.85rem",
+                            backgroundColor: "var(--color-surface)",
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="maxWeightKg"
+                          stroke="var(--color-accent)"
+                          strokeWidth={2.5}
+                          dot={{ r: 5, fill: "var(--color-accent)", stroke: "white", strokeWidth: 2 }}
+                          activeDot={{ r: 7 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </>
+                )}
               </div>
-            </section>
-
-            {/* ── Session detail + trainer comments ── */}
-            {selectedSession && (
-              <>
-                <hr style={styles.divider} />
-                <section style={styles.section}>
-                  <h2 style={styles.subheading}>
-                    Session –{" "}
-                    {new Date(selectedSession.date).toLocaleDateString("de-DE")}
-                  </h2>
-
-                  <table style={styles.table}>
-                    <thead>
-                      <tr>
-                        <th style={styles.th}>Übung</th>
-                        <th style={styles.th}>Wdh.</th>
-                        <th style={styles.th}>Gewicht</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedSession.sets.map((set, i) => (
-                        <tr key={i} style={i % 2 === 0 ? styles.trEven : styles.trOdd}>
-                          <td style={styles.td}>{set.exercise.name}</td>
-                          <td style={styles.td}>{set.reps}</td>
-                          <td style={styles.td}>
-                            {set.weightKg != null ? `${set.weightKg} kg` : "–"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div style={styles.commentsBlock}>
-                    <p style={styles.commentLabel}>💬 Trainer-Feedback</p>
-                    {comments.length === 0 ? (
-                      <p style={styles.noComments}>
-                        Noch kein Feedback für diese Session.
-                      </p>
-                    ) : (
-                      comments.map((c) => (
-                        <div key={c.id} style={styles.commentCard}>
-                          <p style={styles.commentText}>{c.text}</p>
-                          <p style={styles.commentMeta}>
-                            {c.trainer.name ?? "Trainer"} ·{" "}
-                            {new Date(c.createdAt).toLocaleDateString("de-DE")}
-                          </p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </section>
-              </>
             )}
-          </>
-        )}
+          </Section>
+
+          {/* Alle Sessions */}
+          <Section title="Alle Sessions">
+            <ul className="flex flex-col gap-1.5">
+              {sessions.map((s) => (
+                <li
+                  key={s.id}
+                  onClick={() => setSelectedSession(s)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && setSelectedSession(s)}
+                  className="grid gap-2 px-4 py-3 rounded-xl cursor-pointer"
+                  style={{
+                    gridTemplateColumns: "1fr 1fr auto",
+                    alignItems: "center",
+                    backgroundColor: selectedSession?.id === s.id ? "var(--color-accent-light)" : "var(--color-bg)",
+                    border: selectedSession?.id === s.id
+                      ? "1px solid var(--color-accent)"
+                      : "1px solid var(--color-border)",
+                  }}
+                >
+                  <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                    {new Date(s.date).toLocaleDateString("de-DE", {
+                      weekday: "short", day: "2-digit", month: "2-digit", year: "numeric",
+                    })}
+                  </span>
+                  <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                    {s.plan?.name ?? "Ohne Plan"}
+                  </span>
+                  <span className="text-xs text-right" style={{ color: "var(--color-text-muted)" }}>
+                    {s.sets.length} Set{s.sets.length !== 1 ? "s" : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Section>
+
+          {/* Session-Detail + Trainer-Kommentare */}
+          {selectedSession && (
+            <Section title={`Session – ${new Date(selectedSession.date).toLocaleDateString("de-DE")}`}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem", marginBottom: "1rem" }}>
+                <thead>
+                  <tr>
+                    {["Übung", "Wdh.", "Gewicht"].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          textAlign: "left",
+                          padding: "0.4rem 0.6rem",
+                          borderBottom: "2px solid var(--color-border)",
+                          color: "var(--color-text-secondary)",
+                          fontWeight: 600,
+                          fontSize: "0.8rem",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedSession.sets.map((set, i) => (
+                    <tr
+                      key={i}
+                      style={{ backgroundColor: i % 2 === 0 ? "transparent" : "var(--color-bg)" }}
+                    >
+                      <td style={{ padding: "0.4rem 0.6rem", color: "var(--color-text-primary)" }}>
+                        {set.exercise.name}
+                      </td>
+                      <td style={{ padding: "0.4rem 0.6rem", color: "var(--color-text-secondary)" }}>
+                        {set.reps}
+                      </td>
+                      <td style={{ padding: "0.4rem 0.6rem", color: "var(--color-text-secondary)" }}>
+                        {set.weightKg != null ? `${set.weightKg} kg` : "–"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--color-border)" }}>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-3"
+                  style={{ color: "var(--color-text-muted)" }}>
+                  Trainer-Feedback
+                </p>
+                {comments.length === 0 ? (
+                  <EmptyState text="Noch kein Feedback für diese Session." />
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {comments.map((c) => (
+                      <div
+                        key={c.id}
+                        className="px-4 py-3 rounded-xl"
+                        style={{
+                          backgroundColor: "var(--color-warning-light)",
+                          border: "1px solid var(--color-warning-text)",
+                        }}
+                      >
+                        <p className="text-sm mb-1" style={{ color: "var(--color-text-primary)" }}>
+                          {c.text}
+                        </p>
+                        <p className="text-xs" style={{ color: "var(--color-warning-text)" }}>
+                          {c.trainer.name ?? "Trainer"} · {new Date(c.createdAt).toLocaleDateString("de-DE")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-sm font-semibold uppercase tracking-widest mb-3"
+        style={{ color: "var(--color-text-muted)" }}>
+        {title}
+      </h2>
+      <div className="rounded-xl p-5"
+        style={{
+          backgroundColor: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-card)",
+        }}>
+        {children}
       </div>
     </div>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────
-
-const styles = {
-  card: {
-    backgroundColor: "var(--color-surface)",
-    padding: "2rem",
-    borderRadius: "12px",
-    boxShadow: "var(--shadow-card)",
-    border: "1px solid var(--color-border)",
-    maxWidth: "640px",
-  },
-  headerRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "1.5rem",
-  },
-  heading: { margin: 0, fontSize: "1.5rem" },
-  backButton: {
-    background: "none",
-    border: "1px solid var(--color-border)",
-    borderRadius: "var(--radius-sm)",
-    padding: "0.3rem 0.8rem",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-    color: "var(--color-text-secondary)",
-  },
-  section: { marginBottom: "1rem" },
-  subheading: { fontSize: "1.1rem", margin: "0 0 0.75rem", color: "#2d3748" },
-  exerciseGrid: {
-    display: "flex",
-    flexWrap: "wrap" as const,
-    gap: "0.5rem",
-    marginBottom: "1rem",
-  },
-  exerciseChip: {
-    padding: "0.35rem 0.75rem",
-    borderRadius: "999px",
-    border: "1px solid #cbd5e0",
-    backgroundColor: "white",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-    color: "#4a5568",
-  },
-  exerciseChipActive: {
-    backgroundColor: "#3182ce",
-    borderColor: "#3182ce",
-    color: "white",
-  },
-  chartWrapper: {
-    backgroundColor: "#f8fafc",
-    borderRadius: "6px",
-    padding: "1rem",
-    border: "1px solid #e2e8f0",
-  },
-  chartTitle: {
-    margin: "0 0 0.5rem",
-    fontSize: "0.9rem",
-    fontWeight: "bold" as const,
-    color: "#4a5568",
-  },
-  divider: { margin: "1.5rem 0", border: "none", borderTop: "1px solid #eee" },
-  empty: { color: "#999", fontSize: "0.9rem", fontStyle: "italic" },
-  sessionList: { display: "flex", flexDirection: "column" as const, gap: "0.4rem" },
-  sessionCard: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr auto",
-    gap: "0.5rem",
-    alignItems: "center",
-    padding: "0.6rem 0.8rem",
-    borderRadius: "6px",
-    border: "1px solid #e2e8f0",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-  },
-  sessionCardActive: { border: "1px solid #3182ce", backgroundColor: "#ebf8ff" },
-  sessionDate: { fontWeight: "bold" as const, color: "#2d3748" },
-  sessionPlan: { color: "#718096", fontSize: "0.85rem" },
-  sessionSets: { color: "#a0aec0", fontSize: "0.8rem", textAlign: "right" as const },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse" as const,
-    marginBottom: "1rem",
-    fontSize: "0.9rem",
-  },
-  th: {
-    textAlign: "left" as const,
-    padding: "0.4rem 0.6rem",
-    borderBottom: "2px solid #e2e8f0",
-    color: "#4a5568",
-    fontWeight: "bold" as const,
-  },
-  td: { padding: "0.4rem 0.6rem" },
-  trEven: { backgroundColor: "white" },
-  trOdd: { backgroundColor: "#f8fafc" },
-  commentsBlock: { marginTop: "1rem" },
-  commentLabel: { fontWeight: "bold" as const, color: "#4a5568", marginBottom: "0.5rem" },
-  noComments: { color: "#999", fontSize: "0.85rem", fontStyle: "italic" },
-  commentCard: {
-    backgroundColor: "#fffbeb",
-    border: "1px solid #fbd38d",
-    borderRadius: "6px",
-    padding: "0.75rem",
-    marginBottom: "0.5rem",
-  },
-  commentText: { margin: "0 0 0.4rem", color: "#2d3748", fontSize: "0.9rem" },
-  commentMeta: { margin: 0, color: "#b7791f", fontSize: "0.8rem" },
-} as const;
+function EmptyState({ text }: { text: string }) {
+  return (
+    <p className="text-sm" style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>
+      {text}
+    </p>
+  );
+}

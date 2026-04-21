@@ -1,11 +1,8 @@
 "use client";
 
-// This page lets the user start a new workout session.
-// They pick a training plan (or start without one), and are then
-// redirected to the active session page where they log their sets.
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Zap, PenLine } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 type TrainingPlan = {
@@ -28,7 +25,6 @@ export default function StartWorkoutPage() {
     if (!loading && !user) router.push("/auth/login");
   }, [loading, user, router]);
 
-  // Load the user's training plans
   useEffect(() => {
     if (!session?.access_token) return;
     fetch("http://localhost:3001/training-plans", {
@@ -43,7 +39,6 @@ export default function StartWorkoutPage() {
     if (!session?.access_token) return;
     setStarting(true);
     setError(null);
-
     try {
       const res = await fetch("http://localhost:3001/workout-sessions", {
         method: "POST",
@@ -51,13 +46,9 @@ export default function StartWorkoutPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          planId: selectedPlanId ?? undefined,
-        }),
+        body: JSON.stringify({ planId: selectedPlanId ?? undefined }),
       });
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
       const newSession = await res.json();
       router.push(`/dashboard/workout/${newSession.id}`);
     } catch {
@@ -66,196 +57,184 @@ export default function StartWorkoutPage() {
     }
   }
 
-  if (loading || !user) return <div style={styles.container}><p>Loading...</p></div>;
-
-  const canStart = selectedPlanId !== undefined; // null = no plan selected yet, "" = free training
+  if (loading || !user) {
+    return <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>Laden...</p>;
+  }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <button onClick={() => router.back()} style={styles.backLink}>
-          ← Zurück
-        </button>
-        <h1 style={styles.heading}>Training starten</h1>
+    <div className="max-w-xl">
 
-        {/* Free training option */}
-        <p style={styles.sectionLabel}>Trainingsplan wählen</p>
-        <div
-          style={
-            selectedPlanId === ""
-              ? { ...styles.planCard, ...styles.planCardSelected }
-              : styles.planCard
-          }
-          onClick={() => setSelectedPlanId("")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === "Enter" && setSelectedPlanId("")}
-        >
-          <span style={styles.planName}>🏃 Freies Training</span>
-          <span style={styles.planMeta}>Ohne Plan – Übungen frei wählbar</span>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
+          Training starten
+        </h1>
+        <p className="text-base" style={{ color: "var(--color-text-secondary)" }}>
+          Wähle einen Plan oder trainiere frei.
+        </p>
+      </div>
 
-        {/* Plan cards */}
-        {plans.map((plan) => {
-          const isEmpty = plan._count.planExercises === 0;
-          const isSelected = selectedPlanId === plan.id;
+      <Section title="Trainingsplan wählen">
+        <div className="flex flex-col gap-2">
 
-          return (
-            <div key={plan.id} style={isEmpty ? styles.planCardEmpty : isSelected ? { ...styles.planCard, ...styles.planCardSelected } : styles.planCard}>
-              <div style={styles.planCardTop}>
-                <div>
-                  <span style={isEmpty ? styles.planNameDisabled : styles.planName}>
+          {/* Freies Training */}
+          <PlanCard
+            selected={selectedPlanId === ""}
+            onClick={() => setSelectedPlanId("")}
+            disabled={false}
+          >
+            <div className="flex items-center gap-2">
+              <PenLine size={15} style={{ color: "var(--color-text-muted)" }} />
+              <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                Freies Training
+              </span>
+            </div>
+            <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+              Ohne Plan – Übungen frei wählbar
+            </p>
+          </PlanCard>
+
+          {/* Plan-Karten */}
+          {plans.map((plan) => {
+            const isEmpty = plan._count.planExercises === 0;
+            const isSelected = selectedPlanId === plan.id;
+            return (
+              <PlanCard
+                key={plan.id}
+                selected={isSelected}
+                onClick={isEmpty ? undefined : () => setSelectedPlanId(plan.id)}
+                disabled={isEmpty}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: isEmpty ? "var(--color-text-muted)" : "var(--color-text-primary)" }}
+                  >
                     {plan.name}
                   </span>
                   {isEmpty ? (
-                    <span style={styles.emptyBadge}>Keine Übungen</span>
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: "var(--color-danger-light)",
+                        color: "var(--color-danger-text)",
+                      }}
+                    >
+                      Keine Übungen
+                    </span>
                   ) : (
-                    <span style={styles.countBadge}>
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: "var(--color-success-light)",
+                        color: "var(--color-success-text)",
+                      }}
+                    >
                       {plan._count.planExercises} Übung{plan._count.planExercises !== 1 ? "en" : ""}
                     </span>
                   )}
                 </div>
-
-                {/* Only selectable if plan has exercises */}
-                {!isEmpty && (
+                {plan.description && (
+                  <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                    {plan.description}
+                  </p>
+                )}
+                {isEmpty && (
                   <button
-                    style={isSelected ? styles.selectBtnActive : styles.selectBtn}
-                    onClick={() => setSelectedPlanId(plan.id)}
+                    className="text-xs mt-1 cursor-pointer"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "var(--color-accent-text)",
+                      padding: 0,
+                      textDecoration: "underline",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/dashboard/training-plans/${plan.id}`);
+                    }}
                   >
-                    {isSelected ? "✓ Gewählt" : "Wählen"}
+                    Übungen hinzufügen →
                   </button>
                 )}
-              </div>
+              </PlanCard>
+            );
+          })}
+        </div>
 
-              {plan.description && (
-                <span style={isEmpty ? styles.planMetaDisabled : styles.planMeta}>
-                  {plan.description}
-                </span>
-              )}
+        {error && (
+          <p className="text-sm mt-3" style={{ color: "var(--color-danger-text)" }}>{error}</p>
+        )}
+      </Section>
 
-              {/* CTA for empty plans */}
-              {isEmpty && (
-                <button
-                  style={styles.editLink}
-                  onClick={() => router.push(`/dashboard/training-plans/${plan.id}`)}
-                >
-                  ✏️ Übungen hinzufügen
-                </button>
-              )}
-            </div>
-          );
-        })}
+      <button
+        onClick={handleStart}
+        disabled={starting || selectedPlanId === null}
+        className="flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl text-sm font-semibold cursor-pointer"
+        style={{
+          backgroundColor: selectedPlanId === null ? "var(--color-border)" : "var(--color-accent)",
+          color: selectedPlanId === null ? "var(--color-text-muted)" : "#ffffff",
+          border: "none",
+          cursor: selectedPlanId === null ? "not-allowed" : "pointer",
+          boxShadow: selectedPlanId !== null ? "0 4px 12px rgba(79, 70, 229, 0.3)" : "none",
+          transition: "all 0.15s ease",
+        }}
+      >
+        <Zap size={17} />
+        {starting ? "Wird gestartet..." : "Training starten"}
+      </button>
 
-        {error && <p style={styles.error}>{error}</p>}
-
-        <button
-          onClick={handleStart}
-          style={selectedPlanId === null ? styles.startButtonDisabled : styles.startButton}
-          disabled={starting || selectedPlanId === null}
-        >
-          {starting ? "Wird gestartet..." : "🏋️ Training starten"}
-        </button>
-      </div>
     </div>
   );
 }
 
-const styles = {
-  container: {
-    minHeight: "100vh", backgroundColor: "#f5f5f5",
-    fontFamily: "sans-serif", padding: "2rem",
-    display: "flex", alignItems: "center", justifyContent: "center",
-  },
-  card: {
-    backgroundColor: "white", padding: "2rem", borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)", width: "100%", maxWidth: "480px",
-  },
-  backLink: {
-    background: "none", border: "none", color: "#666", cursor: "pointer",
-    fontSize: "0.9rem", padding: "0", marginBottom: "1rem", display: "block",
-  },
-  heading: { margin: "0 0 1.25rem", fontSize: "1.5rem" },
-  sectionLabel: { fontWeight: "bold" as const, fontSize: "0.85rem", color: "#718096", marginBottom: "0.5rem", textTransform: "uppercase" as const, letterSpacing: "0.05em" },
+function PlanCard({
+  selected,
+  onClick,
+  disabled,
+  children,
+}: {
+  selected: boolean;
+  onClick?: () => void;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => e.key === "Enter" && onClick?.()}
+      className="px-4 py-3 rounded-xl"
+      style={{
+        backgroundColor: selected ? "var(--color-success-light)" : "var(--color-bg)",
+        border: selected
+          ? "2px solid var(--color-success)"
+          : "1px solid var(--color-border)",
+        cursor: disabled ? "default" : onClick ? "pointer" : "default",
+        opacity: disabled ? 0.6 : 1,
+        transition: "all 0.1s ease",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
-  // Normal selectable plan card
-  planCard: {
-    border: "1px solid #e2e8f0",
-    borderRadius: "8px",
-    padding: "0.9rem 1rem",
-    marginBottom: "0.5rem",
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "0.2rem",
-  },
-  planCardSelected: {
-    border: "2px solid #38a169",
-    backgroundColor: "#f0fff4",
-  },
-  // Empty (disabled) plan card – not clickable to start
-  planCardEmpty: {
-    border: "1px solid #e2e8f0",
-    borderRadius: "8px",
-    padding: "0.9rem 1rem",
-    marginBottom: "0.5rem",
-    backgroundColor: "#fafafa",
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "0.4rem",
-    opacity: 0.8,
-  },
-  planCardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  planName: { fontWeight: "bold" as const, color: "#2d3748", marginRight: "0.5rem" },
-  planNameDisabled: { fontWeight: "bold" as const, color: "#a0aec0", marginRight: "0.5rem" },
-  planMeta: { fontSize: "0.85rem", color: "#718096", display: "block" },
-  planMetaDisabled: { fontSize: "0.85rem", color: "#cbd5e0", display: "block" },
-
-  countBadge: {
-    fontSize: "0.75rem", color: "#38a169",
-    backgroundColor: "#f0fff4", border: "1px solid #9ae6b4",
-    borderRadius: "999px", padding: "0.1rem 0.5rem",
-  },
-  emptyBadge: {
-    fontSize: "0.75rem", color: "#e53e3e",
-    backgroundColor: "#fff5f5", border: "1px solid #feb2b2",
-    borderRadius: "999px", padding: "0.1rem 0.5rem",
-  },
-
-  selectBtn: {
-    fontSize: "0.8rem", padding: "0.25rem 0.7rem",
-    border: "1px solid #cbd5e0", borderRadius: "4px",
-    backgroundColor: "white", cursor: "pointer", color: "#4a5568",
-    flexShrink: 0,
-  },
-  selectBtnActive: {
-    fontSize: "0.8rem", padding: "0.25rem 0.7rem",
-    border: "1px solid #38a169", borderRadius: "4px",
-    backgroundColor: "#38a169", cursor: "pointer", color: "white",
-    flexShrink: 0,
-  },
-
-  editLink: {
-    background: "none", border: "none", cursor: "pointer",
-    color: "#3182ce", fontSize: "0.85rem", padding: "0",
-    textAlign: "left" as const, textDecoration: "underline",
-  },
-
-  error: { color: "#e53e3e", fontSize: "0.9rem", margin: "0.75rem 0" },
-
-  startButton: {
-    marginTop: "1rem",
-    width: "100%", padding: "0.9rem", backgroundColor: "#38a169", color: "white",
-    border: "none", borderRadius: "4px", cursor: "pointer",
-    fontSize: "1.1rem", fontWeight: "bold" as const,
-  },
-  startButtonDisabled: {
-    marginTop: "1rem",
-    width: "100%", padding: "0.9rem", backgroundColor: "#c6f6d5", color: "#9ae6b4",
-    border: "none", borderRadius: "4px", cursor: "not-allowed",
-    fontSize: "1.1rem", fontWeight: "bold" as const,
-  },
-} as const;
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-sm font-semibold uppercase tracking-widest mb-3"
+        style={{ color: "var(--color-text-muted)" }}>
+        {title}
+      </h2>
+      <div className="rounded-xl p-5"
+        style={{
+          backgroundColor: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-card)",
+        }}>
+        {children}
+      </div>
+    </div>
+  );
+}

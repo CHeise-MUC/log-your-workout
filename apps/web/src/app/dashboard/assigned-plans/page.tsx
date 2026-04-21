@@ -1,12 +1,8 @@
 "use client";
 
-// Assigned Plans page – client view.
-// Shows all training plans that a trainer has assigned to this user.
-// Plans are read-only: the client can view and use them for workouts,
-// but cannot edit or delete them.
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 type PlanExercise = {
@@ -51,9 +47,7 @@ export default function AssignedPlansPage() {
 
   useEffect(() => {
     if (!session?.access_token) return;
-
     const headers = { Authorization: `Bearer ${session.access_token}` };
-
     Promise.all([
       fetch("http://localhost:3001/users/me/assigned-plans", { headers }).then((r) => r.json()),
       fetch("http://localhost:3001/users/me/invitations", { headers }).then((r) => r.json()),
@@ -69,156 +63,206 @@ export default function AssignedPlansPage() {
   async function handleAccept(invitationId: string) {
     if (!session?.access_token) return;
     setAccepting(invitationId);
-
     try {
       const res = await fetch(
         `http://localhost:3001/users/me/invitations/${invitationId}/accept`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        },
+        { method: "PATCH", headers: { Authorization: `Bearer ${session.access_token}` } },
       );
       if (!res.ok) throw new Error("Fehler");
-
-      // Remove from pending list – the trainer's assigned plans will appear
-      // once they assign a plan to this now-active client.
       setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
     } catch {
-      // Silent fail – invitation stays in the list
+      // Silent fail
     } finally {
       setAccepting(null);
     }
   }
 
-  if (loading || fetching) return <div style={s.page}><p>Lädt...</p></div>;
+  if (loading || fetching) {
+    return <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>Laden...</p>;
+  }
 
   return (
-    <div style={s.page}>
-      <div style={s.inner}>
-        <div style={s.header}>
-          <button onClick={() => router.back()} style={s.backLink}>← Zurück</button>
-          <h1 style={s.heading}>Vom Trainer zugewiesene Pläne</h1>
-        </div>
+    <div className="max-w-3xl">
 
-        {/* Pending invitations */}
-        {invitations.length > 0 && (
-          <div style={{ marginBottom: "1.5rem" }}>
-            <h2 style={s.sectionHeading}>Ausstehende Einladungen</h2>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
+          Zugewiesene Pläne
+        </h1>
+        <p className="text-base" style={{ color: "var(--color-text-secondary)" }}>
+          Pläne, die dein Trainer für dich zusammengestellt hat.
+        </p>
+      </div>
+
+      {/* Ausstehende Einladungen */}
+      {invitations.length > 0 && (
+        <Section title="Ausstehende Einladungen">
+          <ul className="flex flex-col gap-2">
             {invitations.map((inv) => (
-              <div key={inv.id} style={s.inviteCard}>
+              <li
+                key={inv.id}
+                className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                style={{
+                  backgroundColor: "var(--color-bg)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
                 <div>
-                  <div style={s.inviteName}>
+                  <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
                     {inv.trainer.name ?? inv.trainer.email} möchte dein Trainer sein
-                  </div>
-                  <div style={s.inviteMeta}>
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
                     Eingeladen am {new Date(inv.createdAt).toLocaleDateString("de-DE")}
-                  </div>
+                  </p>
                 </div>
                 <button
-                  style={s.acceptButton}
                   onClick={() => handleAccept(inv.id)}
                   disabled={accepting === inv.id}
+                  className="px-4 py-2 rounded-xl text-sm font-medium cursor-pointer whitespace-nowrap"
+                  style={{
+                    backgroundColor: "var(--color-success)",
+                    color: "#ffffff",
+                    border: "none",
+                    opacity: accepting === inv.id ? 0.7 : 1,
+                  }}
                 >
                   {accepting === inv.id ? "..." : "Annehmen"}
                 </button>
-              </div>
+              </li>
             ))}
-          </div>
-        )}
+          </ul>
+        </Section>
+      )}
 
-        {/* Assigned plans */}
-        <h2 style={s.sectionHeading}>Zugewiesene Pläne</h2>
+      {/* Zugewiesene Pläne */}
+      <Section title="Meine Pläne vom Trainer">
         {assignments.length === 0 ? (
-          <div style={s.card}>
-            <p style={s.empty}>Dir wurden noch keine Pläne von einem Trainer zugewiesen.</p>
-          </div>
+          <EmptyState text="Dir wurden noch keine Pläne von einem Trainer zugewiesen." />
         ) : (
-          assignments.map((a) => {
-            const isExpanded = expandedId === a.id;
-            return (
-              <div key={a.id} style={s.card}>
-                {/* Plan header */}
-                <div
-                  style={s.planHeader}
-                  onClick={() => setExpandedId(isExpanded ? null : a.id)}
-                  role="button"
+          <ul className="flex flex-col gap-2">
+            {assignments.map((a) => {
+              const isExpanded = expandedId === a.id;
+              return (
+                <li
+                  key={a.id}
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    backgroundColor: "var(--color-bg)",
+                    border: "1px solid var(--color-border)",
+                  }}
                 >
-                  <div>
-                    <div style={s.planName}>{a.plan.name}</div>
-                    <div style={s.trainerInfo}>
-                      von {a.trainer.name ?? a.trainer.email} ·{" "}
-                      zugewiesen am{" "}
-                      {new Date(a.assignedAt).toLocaleDateString("de-DE")}
+                  {/* Plan Header */}
+                  <button
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 cursor-pointer"
+                    style={{ background: "none", border: "none", textAlign: "left" }}
+                    onClick={() => setExpandedId(isExpanded ? null : a.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                        {a.plan.name}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                        von {a.trainer.name ?? a.trainer.email} · zugewiesen am{" "}
+                        {new Date(a.assignedAt).toLocaleDateString("de-DE")}
+                      </p>
+                      {a.plan.description && (
+                        <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
+                          {a.plan.description}
+                        </p>
+                      )}
                     </div>
-                    {a.plan.description && (
-                      <div style={s.planDesc}>{a.plan.description}</div>
-                    )}
-                  </div>
-                  <span style={s.chevron}>{isExpanded ? "▲" : "▼"}</span>
-                </div>
+                    {isExpanded
+                      ? <ChevronUp size={16} style={{ color: "var(--color-text-muted)", flexShrink: 0 }} />
+                      : <ChevronDown size={16} style={{ color: "var(--color-text-muted)", flexShrink: 0 }} />}
+                  </button>
 
-                {/* Exercise list (expanded) */}
-                {isExpanded && (
-                  <div style={{ marginTop: "1rem" }}>
-                    <hr style={s.divider} />
-                    <p style={s.exercisesLabel}>
-                      Übungen ({a.plan.planExercises.length})
-                    </p>
-                    <ol style={s.exerciseList}>
-                      {a.plan.planExercises.map((pe) => (
-                        <li key={pe.id} style={s.exerciseItem}>
-                          <div style={s.exerciseName}>{pe.exercise.name}</div>
-                          <div style={s.exerciseMeta}>
-                            {pe.exercise.muscleGroup}
-                            {pe.targetSets && pe.targetReps
-                              ? ` · ${pe.targetSets} × ${pe.targetReps} Wdh.`
-                              : ""}
-                          </div>
-                        </li>
-                      ))}
-                    </ol>
-
-                    {/* Use this plan for a workout */}
-                    <button
-                      style={s.useButton}
-                      onClick={() => router.push(`/dashboard/workout?planId=${a.plan.id}`)}
+                  {/* Expanded: Übungsliste */}
+                  {isExpanded && (
+                    <div
+                      className="px-4 pb-4"
+                      style={{ borderTop: "1px solid var(--color-border)" }}
                     >
-                      🏋️ Diesen Plan trainieren
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })
+                      <p className="text-xs font-semibold uppercase tracking-widest mt-3 mb-2"
+                        style={{ color: "var(--color-text-muted)" }}>
+                        Übungen ({a.plan.planExercises.length})
+                      </p>
+                      <ol className="flex flex-col gap-1.5 mb-4">
+                        {a.plan.planExercises.map((pe, i) => (
+                          <li
+                            key={pe.id}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                            style={{
+                              backgroundColor: "var(--color-surface)",
+                              border: "1px solid var(--color-border)",
+                            }}
+                          >
+                            <span
+                              className="text-xs font-bold w-5 text-center flex-shrink-0"
+                              style={{ color: "var(--color-text-muted)" }}
+                            >
+                              {i + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                                {pe.exercise.name}
+                              </p>
+                              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                                {pe.exercise.muscleGroup}
+                                {pe.targetSets && pe.targetReps
+                                  ? ` · ${pe.targetSets} × ${pe.targetReps} Wdh.`
+                                  : ""}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                      <button
+                        onClick={() => router.push(`/dashboard/workout?planId=${a.plan.id}`)}
+                        className="flex items-center gap-2 w-full justify-center px-4 py-2.5 rounded-xl text-sm font-semibold cursor-pointer"
+                        style={{
+                          backgroundColor: "var(--color-accent)",
+                          color: "#ffffff",
+                          border: "none",
+                        }}
+                      >
+                        <Zap size={15} />
+                        Diesen Plan trainieren
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         )}
+      </Section>
+
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-sm font-semibold uppercase tracking-widest mb-3"
+        style={{ color: "var(--color-text-muted)" }}>
+        {title}
+      </h2>
+      <div className="rounded-xl p-5"
+        style={{
+          backgroundColor: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-card)",
+        }}>
+        {children}
       </div>
     </div>
   );
 }
 
-const s = {
-  page: { minHeight: "100vh", backgroundColor: "#f5f5f5", fontFamily: "sans-serif", padding: "2rem" },
-  inner: { maxWidth: "640px", margin: "0 auto" },
-  header: { marginBottom: "1.5rem" },
-  backLink: { background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: "0.9rem", padding: 0, marginBottom: "0.5rem", display: "block" },
-  heading: { margin: "0", fontSize: "1.8rem" },
-  card: { backgroundColor: "white", padding: "1.25rem", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", marginBottom: "1rem" },
-  planHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer" },
-  planName: { fontWeight: "bold" as const, fontSize: "1.05rem" },
-  trainerInfo: { color: "#888", fontSize: "0.8rem", marginTop: "0.2rem" },
-  planDesc: { color: "#555", fontSize: "0.9rem", marginTop: "0.3rem" },
-  chevron: { color: "#999", fontSize: "0.8rem", marginLeft: "0.5rem" },
-  divider: { border: "none", borderTop: "1px solid #eee", margin: "0.75rem 0" },
-  exercisesLabel: { fontWeight: "bold" as const, fontSize: "0.9rem", marginBottom: "0.5rem" },
-  exerciseList: { padding: "0 0 0 1.2rem", margin: "0 0 1rem", display: "flex", flexDirection: "column" as const, gap: "0.4rem" },
-  exerciseItem: { padding: "0.5rem 0.75rem", backgroundColor: "#f9f9f9", borderRadius: "4px", border: "1px solid #eee" },
-  exerciseName: { fontWeight: "bold" as const, fontSize: "0.9rem" },
-  exerciseMeta: { color: "#888", fontSize: "0.8rem", marginTop: "0.1rem" },
-  useButton: { width: "100%", padding: "0.7rem", backgroundColor: "#38a169", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.95rem" },
-  empty: { color: "#888", fontStyle: "italic" as const },
-  sectionHeading: { fontSize: "1.1rem", fontWeight: "bold" as const, margin: "0 0 0.75rem" },
-  inviteCard: { backgroundColor: "white", padding: "1rem 1.25rem", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" },
-  inviteName: { fontWeight: "bold" as const, fontSize: "0.95rem" },
-  inviteMeta: { color: "#888", fontSize: "0.8rem", marginTop: "0.2rem" },
-  acceptButton: { padding: "0.5rem 1.1rem", backgroundColor: "#38a169", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.9rem", whiteSpace: "nowrap" as const },
-} as const;
+function EmptyState({ text }: { text: string }) {
+  return (
+    <p className="text-sm" style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>
+      {text}
+    </p>
+  );
+}

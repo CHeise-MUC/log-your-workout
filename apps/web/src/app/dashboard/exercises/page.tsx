@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
-// The shape of an exercise as returned by the API
 type Exercise = {
   id: string;
   name: string;
@@ -18,48 +17,31 @@ export default function ExercisesPage() {
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [fetching, setFetching] = useState(true);
-
-  // Form state
   const [name, setName] = useState("");
   const [muscleGroup, setMuscleGroup] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Route protection: redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/auth/login");
-    }
+    if (!loading && !user) router.push("/auth/login");
   }, [loading, user, router]);
 
-  // Load all exercises from the backend when the session is ready
   useEffect(() => {
     if (!session?.access_token) return;
-
     fetch("http://localhost:3001/exercises", {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+      headers: { Authorization: `Bearer ${session.access_token}` },
     })
-      .then((res) => res.json())
-      .then((data) => {
-        setExercises(data);
-        setFetching(false);
-      })
-      .catch(() => {
-        setError("Übungen konnten nicht geladen werden.");
-        setFetching(false);
-      });
+      .then((r) => r.json())
+      .then((data) => { setExercises(data); setFetching(false); })
+      .catch(() => { setError("Übungen konnten nicht geladen werden."); setFetching(false); });
   }, [session]);
 
   async function handleCreate(e: React.FormEvent) {
-    e.preventDefault(); // prevent page reload on form submit
+    e.preventDefault();
     if (!session?.access_token) return;
-
     setSaving(true);
     setError(null);
-
     try {
       const res = await fetch("http://localhost:3001/exercises", {
         method: "POST",
@@ -69,15 +51,9 @@ export default function ExercisesPage() {
         },
         body: JSON.stringify({ name, muscleGroup, description: description || undefined }),
       });
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
       const newExercise: Exercise = await res.json();
-
-      // Add the new exercise to the list without re-fetching everything
       setExercises((prev) => [...prev, newExercise].sort((a, b) => a.name.localeCompare(b.name)));
-
-      // Reset the form
       setName("");
       setMuscleGroup("");
       setDescription("");
@@ -89,177 +65,145 @@ export default function ExercisesPage() {
   }
 
   if (loading || !user) {
-    return <div style={styles.container}><p>Loading...</p></div>;
+    return <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>Laden...</p>;
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.inner}>
+    <div className="max-w-3xl">
 
-        {/* Header */}
-        <div style={styles.header}>
-          <button onClick={() => router.back()} style={styles.backLink}>
-            ← Zurück
-          </button>
-          <h1 style={styles.heading}>Übungen</h1>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
+          Übungen
+        </h1>
+        <p className="text-base" style={{ color: "var(--color-text-secondary)" }}>
+          Verwalte deine Übungsbibliothek.
+        </p>
+      </div>
 
-        {/* Form: create new exercise */}
-        <div style={styles.card}>
-          <h2 style={styles.subheading}>Neue Übung anlegen</h2>
-          <form onSubmit={handleCreate} style={styles.form}>
-            <input
-              style={styles.input}
-              type="text"
-              placeholder="Name (z.B. Bankdrücken)"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-            <input
-              style={styles.input}
-              type="text"
-              placeholder="Muskelgruppe (z.B. Brust)"
-              value={muscleGroup}
-              onChange={(e) => setMuscleGroup(e.target.value)}
-              required
-            />
-            <input
-              style={styles.input}
-              type="text"
-              placeholder="Beschreibung (optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-            {error && <p style={styles.error}>{error}</p>}
-            <button type="submit" style={styles.button} disabled={saving}>
-              {saving ? "Speichern..." : "Übung hinzufügen"}
-            </button>
-          </form>
-        </div>
-
-        {/* List: all exercises */}
-        <div style={styles.card}>
-          <h2 style={styles.subheading}>Alle Übungen ({exercises.length})</h2>
-          {fetching ? (
-            <p>Lädt...</p>
-          ) : exercises.length === 0 ? (
-            <p style={styles.empty}>Noch keine Übungen angelegt.</p>
-          ) : (
-            <ul style={styles.list}>
-              {exercises.map((ex) => (
-                <li key={ex.id} style={styles.listItem}>
-                  <div style={styles.exerciseName}>{ex.name}</div>
-                  <div style={styles.exerciseMeta}>{ex.muscleGroup}</div>
-                  {ex.description && (
-                    <div style={styles.exerciseDesc}>{ex.description}</div>
-                  )}
-                </li>
-              ))}
-            </ul>
+      {/* Neue Übung anlegen */}
+      <Section title="Neue Übung anlegen">
+        <form onSubmit={handleCreate} className="flex flex-col gap-3">
+          <input
+            type="text"
+            placeholder="Name (z.B. Bankdrücken)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="px-4 py-2.5 rounded-xl text-sm"
+            style={{
+              border: "1px solid var(--color-border)",
+              backgroundColor: "var(--color-bg)",
+              color: "var(--color-text-primary)",
+              outline: "none",
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Muskelgruppe (z.B. Brust)"
+            value={muscleGroup}
+            onChange={(e) => setMuscleGroup(e.target.value)}
+            required
+            className="px-4 py-2.5 rounded-xl text-sm"
+            style={{
+              border: "1px solid var(--color-border)",
+              backgroundColor: "var(--color-bg)",
+              color: "var(--color-text-primary)",
+              outline: "none",
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Beschreibung (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="px-4 py-2.5 rounded-xl text-sm"
+            style={{
+              border: "1px solid var(--color-border)",
+              backgroundColor: "var(--color-bg)",
+              color: "var(--color-text-primary)",
+              outline: "none",
+            }}
+          />
+          {error && (
+            <p className="text-sm" style={{ color: "var(--color-danger-text)" }}>{error}</p>
           )}
-        </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-5 py-2.5 rounded-xl text-sm font-medium cursor-pointer self-start"
+            style={{
+              backgroundColor: "var(--color-accent)",
+              color: "#ffffff",
+              border: "none",
+              opacity: saving ? 0.7 : 1,
+            }}
+          >
+            {saving ? "Speichern..." : "Übung hinzufügen"}
+          </button>
+        </form>
+      </Section>
 
+      {/* Übungsliste */}
+      <Section title={`Alle Übungen (${exercises.length})`}>
+        {fetching ? (
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>Lädt...</p>
+        ) : exercises.length === 0 ? (
+          <EmptyState text="Noch keine Übungen angelegt." />
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {exercises.map((ex) => (
+              <li
+                key={ex.id}
+                className="px-4 py-3 rounded-xl"
+                style={{
+                  backgroundColor: "var(--color-bg)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                  {ex.name}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                  {ex.muscleGroup}
+                </p>
+                {ex.description && (
+                  <p className="text-xs mt-0.5 italic" style={{ color: "var(--color-text-muted)" }}>
+                    {ex.description}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-sm font-semibold uppercase tracking-widest mb-3"
+        style={{ color: "var(--color-text-muted)" }}>
+        {title}
+      </h2>
+      <div className="rounded-xl p-5"
+        style={{
+          backgroundColor: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-card)",
+        }}>
+        {children}
       </div>
     </div>
   );
 }
 
-const styles = {
-  container: {
-    minHeight: "100vh",
-    backgroundColor: "#f5f5f5",
-    fontFamily: "sans-serif",
-    padding: "2rem",
-  },
-  inner: {
-    maxWidth: "600px",
-    margin: "0 auto",
-  },
-  header: {
-    marginBottom: "1.5rem",
-  },
-  backLink: {
-    background: "none",
-    border: "none",
-    color: "#666",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-    padding: "0",
-    marginBottom: "0.5rem",
-    display: "block",
-  },
-  heading: {
-    margin: "0",
-    fontSize: "1.8rem",
-  },
-  card: {
-    backgroundColor: "white",
-    padding: "1.5rem",
-    borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-    marginBottom: "1.5rem",
-  },
-  subheading: {
-    margin: "0 0 1rem",
-    fontSize: "1.1rem",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "0.75rem",
-  },
-  input: {
-    padding: "0.6rem 0.8rem",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-    fontSize: "1rem",
-  },
-  button: {
-    padding: "0.7rem",
-    backgroundColor: "#3182ce",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "1rem",
-  },
-  error: {
-    color: "#e53e3e",
-    fontSize: "0.9rem",
-    margin: "0",
-  },
-  list: {
-    listStyle: "none",
-    padding: "0",
-    margin: "0",
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "0.75rem",
-  },
-  listItem: {
-    padding: "0.75rem",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "4px",
-    border: "1px solid #eee",
-  },
-  exerciseName: {
-    fontWeight: "bold" as const,
-    fontSize: "1rem",
-  },
-  exerciseMeta: {
-    color: "#666",
-    fontSize: "0.85rem",
-    marginTop: "0.2rem",
-  },
-  exerciseDesc: {
-    color: "#888",
-    fontSize: "0.85rem",
-    marginTop: "0.2rem",
-    fontStyle: "italic" as const,
-  },
-  empty: {
-    color: "#888",
-    fontStyle: "italic" as const,
-  },
-} as const;
+function EmptyState({ text }: { text: string }) {
+  return (
+    <p className="text-sm" style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>
+      {text}
+    </p>
+  );
+}
