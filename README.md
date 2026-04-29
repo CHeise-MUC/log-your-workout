@@ -39,6 +39,45 @@ npm run dev
 The web app will run on http://localhost:3000
 The API will run on http://localhost:3001
 
-## Development
+## Local Development
+
+Du brauchst **zwei Terminals** gleichzeitig in VS Code (Terminal → New Terminal oder das **+**-Icon).
+
+```bash
+# Terminal 1 – Frontend (Next.js)
+cd apps/web && npm run dev
+# → http://localhost:3000
+
+# Terminal 2 – Backend (NestJS)
+cd apps/api && npm run dev
+# → http://localhost:3001
+```
+
+### App-Seiten
+
+| Seite | URL |
+|---|---|
+| Login | http://localhost:3000/auth/login |
+| Dashboard | http://localhost:3000/dashboard |
+| Übungen | http://localhost:3000/dashboard/exercises |
+| Trainingspläne | http://localhost:3000/dashboard/training-plans |
+| Training starten | http://localhost:3000/dashboard/workout |
+| Trainingshistorie | http://localhost:3000/dashboard/workout/history |
+| Trainer-Bereich | http://localhost:3000/trainer |
+
+### Häufige Probleme
+
+```bash
+# Schema-Fehler nach Änderungen
+cd apps/api && npx prisma generate
+
+# Migration nach Datenbankänderung
+cd apps/api && npx prisma migrate dev --name beschreibung
+
+# Abhängigkeiten fehlen nach git pull
+npm install   # im Root-Ordner ausführen
+```
+
+---
 
 Built by [@CHeise-MUC](https://github.com/CHeise-MUC) with Claude.

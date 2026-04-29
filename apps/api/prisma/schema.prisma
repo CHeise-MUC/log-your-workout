@@ -45,6 +45,20 @@ enum TrainerClientStatus {
 }
 
 // ─────────────────────────────────────────────────────────
+// TENANT
+// Represents an organisation (gym, physio practice, freelance trainer).
+// Optional for now – all existing users have tenantId = null.
+// Will be used in Module 22 to enable multi-tenancy and feature flags.
+// ─────────────────────────────────────────────────────────
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users User[]
+}
+
+// ─────────────────────────────────────────────────────────
 // USER
 // Managed by Supabase Auth – we mirror the user here
 // so we can link workouts, plans etc. to a real user record.
@@ -55,6 +69,10 @@ model User {
   name      String?
   role      Role     @default(USER) // new: USER by default; set to TRAINER to unlock trainer features
   createdAt DateTime @default(now())
+
+  // Optional tenant assignment – null = standalone user, set = belongs to an organisation
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
 
   trainingPlans   TrainingPlan[]
   workoutSessions WorkoutSession[]
