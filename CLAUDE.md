@@ -59,6 +59,7 @@ log-your-workout/
 - Nach Schema-Änderung immer: `npx prisma migrate dev --name <beschreibung>`
 - Danach: `npx prisma generate`
 - `tenantId` ist als optionales Feld auf `User` vorbereitet (Multi-Tenant-Grundlage)
+- **RLS:** Ein Event Trigger (`auto_enable_rls_trigger`) aktiviert Row Level Security automatisch auf jeder neuen Tabelle — kein manueller Schritt nötig. Prisma/Backend nutzt `service_role` und ist davon nicht betroffen.
 
 ---
 

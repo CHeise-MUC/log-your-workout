@@ -86,6 +86,31 @@ Int existiert bei uns bereits ansatzweise: jeder Vercel-PR-Preview ist eine Int-
 - **Agent Code Review** – Claude nutzt die `review`-Skill (Logik, Typsicherheit, Security, Design System)
 - **Branch-Schutzregeln auf main** – kein direkter Push mehr möglich (GitHub-Setting)
 
+### AI-First Code Review — Agent als Required Status Check
+
+Der Agent läuft automatisch bei jedem PR als GitHub Actions Workflow und wird als **Pflicht-Status-Check** eingetragen. Kein Merge möglich solange der Check nicht grün ist.
+
+```
+PR öffnen
+  → GitHub Actions: Lint + Build + Tests          (bereits vorhanden, Modul 11)
+  → GitHub Actions: AI Review Agent               (neu in diesem Modul)
+       → Claude liest den Diff
+       → Postet strukturierten Review als Kommentar
+       → Setzt Status ✅ / ❌ je nach Befund
+  → Alle Checks grün → Merge freigegeben
+```
+
+**GitHub-Einstellung dafür:** Settings → Branches → Ruleset → "Require status checks to pass" → AI-Review-Check eintragen. Required approvals bleibt bei 0 (kein Bot-Account nötig).
+
+**Was der Agent prüft:**
+- TypeScript-Typsicherheit (kein implizites `any`)
+- Fehlende Fehlerbehandlung in API-Controllern
+- Sicherheitsprobleme (z.B. fehlende Auth-Guards)
+- Konsistenz mit Design System (Tailwind-Konventionen)
+- Testabdeckung für neue Service-Methoden
+
+**Erweiterbar:** Derselbe Mechanismus kann später für spezialisierte Agents genutzt werden — z.B. ein Security-Agent der nur Auth-relevante Änderungen prüft, oder ein Performance-Agent bei Datenbankabfragen.
+
 ---
 
 ## 📋 Modul 16 – API-Architektur: Swagger, Versionierung & Webhooks
