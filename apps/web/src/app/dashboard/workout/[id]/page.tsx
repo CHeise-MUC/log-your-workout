@@ -59,7 +59,7 @@ export default function ActiveSessionPage() {
   useEffect(() => {
     if (!session?.access_token) return;
 
-    fetch(`http://localhost:3001/workout-sessions/${sessionId}`, {
+    fetch(`http://localhost:3001/v1/workout-sessions/${sessionId}`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => {
@@ -88,7 +88,7 @@ export default function ActiveSessionPage() {
     setError(null);
 
     try {
-      const res = await fetch(`http://localhost:3001/workout-sessions/${sessionId}/sets`, {
+      const res = await fetch(`http://localhost:3001/v1/workout-sessions/${sessionId}/sets`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

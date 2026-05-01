@@ -34,7 +34,7 @@ export default function WorkoutHistoryPage() {
   useEffect(() => {
     if (!session?.access_token) return;
 
-    fetch("http://localhost:3001/workout-sessions", {
+    fetch("http://localhost:3001/v1/workout-sessions", {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())

@@ -42,8 +42,8 @@ export default function TrainingPlansPage() {
     if (!session?.access_token) return;
     const headers = { Authorization: `Bearer ${session.access_token}` };
     Promise.all([
-      fetch("http://localhost:3001/training-plans", { headers }).then((r) => r.json()),
-      fetch("http://localhost:3001/training-plans/public", { headers }).then((r) => r.json()),
+      fetch("http://localhost:3001/v1/training-plans", { headers }).then((r) => r.json()),
+      fetch("http://localhost:3001/v1/training-plans/public", { headers }).then((r) => r.json()),
     ])
       .then(([mine, publicOnes]) => {
         setMyPlans(mine);
@@ -59,7 +59,7 @@ export default function TrainingPlansPage() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3001/training-plans", {
+      const res = await fetch("http://localhost:3001/v1/training-plans", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

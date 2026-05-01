@@ -49,12 +49,12 @@ export default function TrainerClientsPage() {
     const headers = { Authorization: `Bearer ${session.access_token}` };
 
     Promise.all([
-      fetch("http://localhost:3001/trainer/clients", { headers }).then((r) => {
+      fetch("http://localhost:3001/v1/trainer/clients", { headers }).then((r) => {
         if (r.status === 403) throw new Error("not_trainer");
         return r.json();
       }),
-      fetch("http://localhost:3001/trainer/assignments", { headers }).then((r) => r.json()),
-      fetch("http://localhost:3001/training-plans", { headers }).then((r) => r.json()),
+      fetch("http://localhost:3001/v1/trainer/assignments", { headers }).then((r) => r.json()),
+      fetch("http://localhost:3001/v1/training-plans", { headers }).then((r) => r.json()),
     ])
       .then(([clientsData, assignmentsData, plansData]) => {
         setClients(clientsData);
@@ -79,7 +79,7 @@ export default function TrainerClientsPage() {
     setInviteError(null);
     setInviteSuccess(null);
     try {
-      const res = await fetch("http://localhost:3001/trainer/clients", {
+      const res = await fetch("http://localhost:3001/v1/trainer/clients", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,7 +109,7 @@ export default function TrainerClientsPage() {
     setAssigning(true);
     setAssignError(null);
     try {
-      const res = await fetch("http://localhost:3001/trainer/assignments", {
+      const res = await fetch("http://localhost:3001/v1/trainer/assignments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

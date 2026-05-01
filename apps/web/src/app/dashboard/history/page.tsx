@@ -47,7 +47,7 @@ export default function HistoryPage() {
   useEffect(() => {
     if (!session?.access_token) return;
     setLoadingData(true);
-    fetch("http://localhost:3001/workout-sessions", {
+    fetch("http://localhost:3001/v1/workout-sessions", {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
@@ -68,7 +68,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!selectedExercise || !session?.access_token) return;
-    fetch(`http://localhost:3001/workout-sessions/progress/${selectedExercise.id}`, {
+    fetch(`http://localhost:3001/v1/workout-sessions/progress/${selectedExercise.id}`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
@@ -85,7 +85,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!selectedSession || !session?.access_token) return;
-    fetch(`http://localhost:3001/workout-sessions/${selectedSession.id}/comments`, {
+    fetch(`http://localhost:3001/v1/workout-sessions/${selectedSession.id}/comments`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())

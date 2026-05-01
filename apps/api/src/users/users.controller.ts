@@ -9,10 +9,13 @@ import {
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { UsersService } from "./users.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { Role } from "@prisma/client";
 
+@ApiTags("Users")
+@ApiBearerAuth("JWT")
 @UseGuards(AuthGuard)
 @Controller("users")
 export class UsersController {

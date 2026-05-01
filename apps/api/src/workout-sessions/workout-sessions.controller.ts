@@ -2,10 +2,13 @@ import {
   Controller, Get, Post, Body, Param,
   Request, UseGuards, NotFoundException, ForbiddenException,
 } from "@nestjs/common";
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { WorkoutSessionsService } from "./workout-sessions.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { TrainerGuard } from "../trainer/trainer.guard";
 
+@ApiTags("Workout Sessions")
+@ApiBearerAuth("JWT")
 @UseGuards(AuthGuard)
 @Controller("workout-sessions")
 export class WorkoutSessionsController {

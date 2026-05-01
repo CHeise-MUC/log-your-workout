@@ -117,7 +117,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch("http://localhost:3001/users/me", {
+    fetch("http://localhost:3001/v1/users/me", {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
