@@ -37,7 +37,7 @@ export default function ClientProgressPage() {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch(`http://localhost:3001/trainer/clients/${clientId}/progress`, {
+    fetch(`http://localhost:3001/v1/trainer/clients/${clientId}/progress`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => {

@@ -27,7 +27,7 @@ export default function StartWorkoutPage() {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch("http://localhost:3001/training-plans", {
+    fetch("http://localhost:3001/v1/training-plans", {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
@@ -40,7 +40,7 @@ export default function StartWorkoutPage() {
     setStarting(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3001/workout-sessions", {
+      const res = await fetch("http://localhost:3001/v1/workout-sessions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

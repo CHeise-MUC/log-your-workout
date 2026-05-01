@@ -49,8 +49,8 @@ export default function AssignedPlansPage() {
     if (!session?.access_token) return;
     const headers = { Authorization: `Bearer ${session.access_token}` };
     Promise.all([
-      fetch("http://localhost:3001/users/me/assigned-plans", { headers }).then((r) => r.json()),
-      fetch("http://localhost:3001/users/me/invitations", { headers }).then((r) => r.json()),
+      fetch("http://localhost:3001/v1/users/me/assigned-plans", { headers }).then((r) => r.json()),
+      fetch("http://localhost:3001/v1/users/me/invitations", { headers }).then((r) => r.json()),
     ])
       .then(([plansData, invitationsData]) => {
         setAssignments(plansData);
@@ -65,7 +65,7 @@ export default function AssignedPlansPage() {
     setAccepting(invitationId);
     try {
       const res = await fetch(
-        `http://localhost:3001/users/me/invitations/${invitationId}/accept`,
+        `http://localhost:3001/v1/users/me/invitations/${invitationId}/accept`,
         { method: "PATCH", headers: { Authorization: `Bearer ${session.access_token}` } },
       );
       if (!res.ok) throw new Error("Fehler");
