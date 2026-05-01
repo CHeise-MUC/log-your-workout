@@ -2,10 +2,13 @@ import {
   Controller, Get, Post, Body, Param,
   Request, UseGuards, NotFoundException,
 } from "@nestjs/common";
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { TrainingPlansService } from "./training-plans.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { Visibility } from "@prisma/client";
 
+@ApiTags("Training Plans")
+@ApiBearerAuth("JWT")
 @UseGuards(AuthGuard)
 @Controller("training-plans")
 export class TrainingPlansController {

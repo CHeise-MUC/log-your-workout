@@ -9,6 +9,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { TrainerService } from "./trainer.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { TrainerGuard } from "./trainer.guard";
@@ -17,6 +18,8 @@ import { TrainerGuard } from "./trainer.guard";
 //   1. A valid JWT token (AuthGuard)
 //   2. The TRAINER role (TrainerGuard)
 // Guards run in order: AuthGuard first (sets req.user), then TrainerGuard (checks role).
+@ApiTags("Trainer")
+@ApiBearerAuth("JWT")
 @UseGuards(AuthGuard, TrainerGuard)
 @Controller("trainer")
 export class TrainerController {
