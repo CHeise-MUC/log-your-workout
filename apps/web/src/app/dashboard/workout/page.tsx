@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Zap, PenLine } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api";
 
 type TrainingPlan = {
   id: string;
@@ -27,7 +28,7 @@ export default function StartWorkoutPage() {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch("http://localhost:3001/v1/training-plans", {
+    fetch(apiUrl("/training-plans"), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
@@ -40,13 +41,16 @@ export default function StartWorkoutPage() {
     setStarting(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3001/v1/workout-sessions", {
+      const res = await fetch(apiUrl("/workout-sessions"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ planId: selectedPlanId ?? undefined }),
+        // Use || (not ??) so that empty string "" (= Freies Training) becomes undefined.
+        // ?? only catches null/undefined; || also catches empty string.
+        // JSON.stringify omits undefined keys, so the body becomes {} for free training.
+        body: JSON.stringify({ planId: selectedPlanId || undefined }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const newSession = await res.json();
@@ -180,7 +184,7 @@ export default function StartWorkoutPage() {
         }}
       >
         <Zap size={17} />
-        {starting ? "Wird gestartet..." : "Training starten"}
+        {starting ? "Wird gestartet..." : "Jetzt starten"}
       </button>
 
     </div>

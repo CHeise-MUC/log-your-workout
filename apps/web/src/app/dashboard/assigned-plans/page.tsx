@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api";
 
 type PlanExercise = {
   id: string;
@@ -49,8 +50,8 @@ export default function AssignedPlansPage() {
     if (!session?.access_token) return;
     const headers = { Authorization: `Bearer ${session.access_token}` };
     Promise.all([
-      fetch("http://localhost:3001/v1/users/me/assigned-plans", { headers }).then((r) => r.json()),
-      fetch("http://localhost:3001/v1/users/me/invitations", { headers }).then((r) => r.json()),
+      fetch(apiUrl("/users/me/assigned-plans"), { headers }).then((r) => r.json()),
+      fetch(apiUrl("/users/me/invitations"), { headers }).then((r) => r.json()),
     ])
       .then(([plansData, invitationsData]) => {
         setAssignments(plansData);
@@ -65,7 +66,7 @@ export default function AssignedPlansPage() {
     setAccepting(invitationId);
     try {
       const res = await fetch(
-        `http://localhost:3001/v1/users/me/invitations/${invitationId}/accept`,
+        apiUrl(`/users/me/invitations/${invitationId}/accept`),
         { method: "PATCH", headers: { Authorization: `Bearer ${session.access_token}` } },
       );
       if (!res.ok) throw new Error("Fehler");

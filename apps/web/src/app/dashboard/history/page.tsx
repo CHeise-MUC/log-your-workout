@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { apiUrl } from "@/lib/api";
 
 type ExerciseSummary = { id: string; name: string };
 type ProgressPoint = { sessionId: string; date: string; maxWeightKg: number };
@@ -47,7 +48,7 @@ export default function HistoryPage() {
   useEffect(() => {
     if (!session?.access_token) return;
     setLoadingData(true);
-    fetch("http://localhost:3001/v1/workout-sessions", {
+    fetch(apiUrl("/workout-sessions"), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
@@ -68,7 +69,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!selectedExercise || !session?.access_token) return;
-    fetch(`http://localhost:3001/v1/workout-sessions/progress/${selectedExercise.id}`, {
+    fetch(apiUrl(`/workout-sessions/progress/${selectedExercise.id}`), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
@@ -85,7 +86,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!selectedSession || !session?.access_token) return;
-    fetch(`http://localhost:3001/v1/workout-sessions/${selectedSession.id}/comments`, {
+    fetch(apiUrl(`/workout-sessions/${selectedSession.id}/comments`), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())

@@ -55,7 +55,8 @@ export class WorkoutSessionsService {
     return this.prisma.workoutSession.create({
       data: {
         userId,
-        planId: data.planId ?? null,
+        // Use || so that empty string "" is also treated as "no plan" (same as null/undefined)
+        planId: data.planId || null,
         notes: data.notes,
       },
       include: {

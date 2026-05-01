@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "sb-uezuyjdfsmtyeestxoqr-auth-token",
+          "value": "{\"access_token\":\"eyJhbGciOiJFUzI1NiIsImtpZCI6ImNmOTJmZDAzLWVhMTItNGYzNy1iN2YzLTA1YmFjNzVjNzliYyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3VlenV5amRmc210eWVlc3R4b3FyLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJiNzliNDQ4Mi0wZTAwLTQ4OTEtYmQ5MS01MGEwOTU4YjJiMDgiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc3NjY5Njc4LCJpYXQiOjE3Nzc2NjYwNzgsImVtYWlsIjoidGVzdEBsb2d5b3Vyd29ya291dC5kZXYiLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc3NzY2NjA3OH1dLCJzZXNzaW9uX2lkIjoiODY2YjRhMDMtZjllMS00ZTgwLWI0OTQtODNiMjA4ZDNmNGJhIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.pjjDyd0OM3yGppk_-DahcM8UlMZDnuHPueWGJjT0NK-SNlKE1V3NknkljCIFAEO_nwp4gI3TUnZAHWoLhxKL0w\",\"token_type\":\"bearer\",\"expires_in\":3600,\"expires_at\":1777669678,\"refresh_token\":\"2gfmpfodkx5g\",\"user\":{\"id\":\"b79b4482-0e00-4891-bd91-50a0958b2b08\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"test@logyourworkout.dev\",\"email_confirmed_at\":\"2026-05-01T19:10:49.355554Z\",\"phone\":\"\",\"confirmed_at\":\"2026-05-01T19:10:49.355554Z\",\"last_sign_in_at\":\"2026-05-01T20:07:58.512048119Z\",\"app_metadata\":{\"provider\":\"email\",\"providers\":[\"email\"]},\"user_metadata\":{\"email_verified\":true},\"identities\":[{\"identity_id\":\"8fc8b073-17d8-4e4c-bb18-39020110ed73\",\"id\":\"b79b4482-0e00-4891-bd91-50a0958b2b08\",\"user_id\":\"b79b4482-0e00-4891-bd91-50a0958b2b08\",\"identity_data\":{\"email\":\"test@logyourworkout.dev\",\"email_verified\":false,\"phone_verified\":false,\"sub\":\"b79b4482-0e00-4891-bd91-50a0958b2b08\"},\"provider\":\"email\",\"last_sign_in_at\":\"2026-05-01T19:10:49.349119Z\",\"created_at\":\"2026-05-01T19:10:49.349189Z\",\"updated_at\":\"2026-05-01T19:10:49.349189Z\",\"email\":\"test@logyourworkout.dev\"}],\"created_at\":\"2026-05-01T19:10:49.331319Z\",\"updated_at\":\"2026-05-01T20:07:58.532103Z\",\"is_anonymous\":false},\"weak_password\":null}"
+        }
+      ]
+    }
+  ]
+}

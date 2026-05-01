@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import { apiUrl } from "@/lib/api";
 
 type DbProfile = {
   id: string;
@@ -117,7 +118,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch("http://localhost:3001/v1/users/me", {
+    fetch(apiUrl("/users/me"), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
@@ -274,7 +275,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           style={{ padding: isCollapsed ? "1rem 0.5rem" : "1rem 0.75rem" }}
         >
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            // Exact match always wins.
+            // Prefix match (e.g. /dashboard/workout/123) only applies when the
+            // href has ≥ 2 path segments – otherwise /dashboard would also
+            // highlight when the user is on /dashboard/workout.
+            const hrefDepth = item.href.split("/").filter(Boolean).length;
+            const isActive =
+              pathname === item.href ||
+              (hrefDepth >= 2 && pathname.startsWith(item.href + "/"));
             const isHovered = hoveredItem === item.href;
             const Icon = item.icon;
 

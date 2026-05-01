@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api";
 
 type LoggedSet = {
   id: string;
@@ -37,7 +38,7 @@ export default function ClientProgressPage() {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch(`http://localhost:3001/v1/trainer/clients/${clientId}/progress`, {
+    fetch(apiUrl(`/trainer/clients/${clientId}/progress`), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => {

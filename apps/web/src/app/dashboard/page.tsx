@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Zap, TrendingUp, CalendarDays, Dumbbell } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api";
 
 type WorkoutSession = {
   id: string;
@@ -28,7 +29,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch("http://localhost:3001/v1/workout-sessions", {
+    fetch(apiUrl("/workout-sessions"), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
