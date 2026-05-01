@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api";
 
 type Exercise = {
   id: string;
@@ -29,7 +30,7 @@ export default function ExercisesPage() {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    fetch("http://localhost:3001/v1/exercises", {
+    fetch(apiUrl("/exercises"), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
@@ -43,7 +44,7 @@ export default function ExercisesPage() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3001/v1/exercises", {
+      const res = await fetch(apiUrl("/exercises"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

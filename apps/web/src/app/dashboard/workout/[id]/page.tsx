@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api";
 
 type Exercise = { id: string; name: string };
 
@@ -59,7 +60,7 @@ export default function ActiveSessionPage() {
   useEffect(() => {
     if (!session?.access_token) return;
 
-    fetch(`http://localhost:3001/v1/workout-sessions/${sessionId}`, {
+    fetch(apiUrl(`/workout-sessions/${sessionId}`), {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => {
@@ -88,7 +89,7 @@ export default function ActiveSessionPage() {
     setError(null);
 
     try {
-      const res = await fetch(`http://localhost:3001/v1/workout-sessions/${sessionId}/sets`, {
+      const res = await fetch(apiUrl(`/workout-sessions/${sessionId}/sets`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

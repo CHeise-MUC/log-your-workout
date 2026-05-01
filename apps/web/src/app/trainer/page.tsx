@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Users, ClipboardList, UserPlus, ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api";
 
 type Client = {
   id: string;
@@ -56,12 +57,12 @@ export default function TrainerDashboardPage() {
     const headers = { Authorization: `Bearer ${session.access_token}` };
 
     Promise.all([
-      fetch("http://localhost:3001/v1/trainer/clients", { headers }).then((r) => {
+      fetch(apiUrl("/trainer/clients"), { headers }).then((r) => {
         if (r.status === 403) throw new Error("not_trainer");
         return r.json();
       }),
-      fetch("http://localhost:3001/v1/trainer/assignments", { headers }).then((r) => r.json()),
-      fetch("http://localhost:3001/v1/training-plans", { headers }).then((r) => r.json()),
+      fetch(apiUrl("/trainer/assignments"), { headers }).then((r) => r.json()),
+      fetch(apiUrl("/training-plans"), { headers }).then((r) => r.json()),
     ])
       .then(([clientsData, assignmentsData, plansData]) => {
         setClients(clientsData);
@@ -86,7 +87,7 @@ export default function TrainerDashboardPage() {
     setInviteError(null);
     setInviteSuccess(null);
     try {
-      const res = await fetch("http://localhost:3001/v1/trainer/clients", {
+      const res = await fetch(apiUrl("/trainer/clients"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +117,7 @@ export default function TrainerDashboardPage() {
     setAssigning(true);
     setAssignError(null);
     try {
-      const res = await fetch("http://localhost:3001/v1/trainer/assignments", {
+      const res = await fetch(apiUrl("/trainer/assignments"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api";
 
 type Exercise = {
   id: string;
@@ -58,11 +59,11 @@ export default function TrainingPlanDetailPage() {
     const headers = { Authorization: `Bearer ${session.access_token}` };
 
     Promise.all([
-      fetch(`http://localhost:3001/v1/training-plans/${planId}`, { headers }).then((r) => {
+      fetch(apiUrl(`/training-plans/${planId}`), { headers }).then((r) => {
         if (!r.ok) throw new Error("Plan nicht gefunden");
         return r.json();
       }),
-      fetch("http://localhost:3001/v1/exercises", { headers }).then((r) => r.json()),
+      fetch(apiUrl("/exercises"), { headers }).then((r) => r.json()),
     ])
       .then(([planData, exercisesData]) => {
         setPlan(planData);
@@ -84,7 +85,7 @@ export default function TrainingPlanDetailPage() {
     setError(null);
 
     try {
-      const res = await fetch(`http://localhost:3001/v1/training-plans/${planId}/exercises`, {
+      const res = await fetch(apiUrl(`/training-plans/${planId}/exercises`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
